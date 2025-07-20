@@ -193,6 +193,7 @@ These features are currently under consideration and may or may not be implement
 
 - [ ] Seralising the GeoNames database file into a binary file for much faster subsequent loads.
 - [ ] Support for embedded location data within `.mp4` and `.mov` video files. This requires sample videos that implement this capability.
+- [ ] Support for entering units (`km` or `m`) when changing the distance threshold. 
 
 If you're particularly enthusiastic about any of these potential features or have ideas of your own, you’re encouraged to raise a [feature request](https://github.com/mrsilver76/groupmachine/issues).
 
