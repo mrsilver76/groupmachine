@@ -32,15 +32,18 @@ naturally reflects your trips, events, or outings without manual sorting.
 Grouping is based on two key factors: the time between shots and the distance between their locations. When the gap between consecutive
 photos or videos exceeds either the time or distance threshold, a new album is started.
 
-Using the default thresholds (48 hours and 50 km) means that photos taken less than two days apart and within 50 kilometres will be grouped together.
-For example, pictures taken during a single day trip or a weekend away will usually fall into the same album. If you then travel to a different city
-a few days later, that will create a new album. This approach is designed to reflect natural breaks in your photo timeline, capturing major location changes or extended time gaps.
+Using the default thresholds (48 hours and 50 km) means that photos/videos taken less than two days apart and within 50 kilometres will be grouped together.
+For example, pictures/videos taken during a single day trip or a weekend away will usually fall into the same album. If you then travel to a different city
+a few days later, that will create a new album. This approach is designed to reflect natural breaks in your timeline, capturing major location changes or extended time gaps.
 
 Because the grouping relies on metadata timestamps and GPS coordinates, it assumes your media files include accurate time and location information.
 These assumptions generally hold true for photos and videos downloaded from modern smartphones or cloud backups. If the metadata is missing or invalid, GroupMachine
 can use the created or last modified timestamp of the file instead (whichever is the earliest). 
 
 You can override these defaults using `-t` (`--time`) and `-d` (`--distance`).
+
+>[!NOTE]
+>Videos with embedded GPS data are not currently supported. Most consumer devices (including iPhones) do not store location metadata in videos, so location-based grouping only applies to photos. However, videos will still be included in albums based on time proximity - if they fall within the configured time threshold, they’ll be grouped alongside nearby photos.
 
 ## 🧭 Enhancing Album Names Using Location Data
 
@@ -52,13 +55,13 @@ This can make your albums more meaningful and easier to browse - for example, �
 You can also choose to append date information (using `-a` or `--append`) to locations you visit frequently to differentiate those albums. For instance, using `--append MMMM yyyy` would label your album as “_Paris, Le Marais and Versailles (April 2025)_”
 
 To use this feature, you’ll need to download one of the [GeoNames database files](https://www.geonames.org/datasources/), which are quite large and may take
-some time to process, especially the comprehensive `allCountries` dataset. The location names are based on popular or significant nearby places, so while
+some time to process, especially the comprehensive `allCountries.txt` dataset. The location names are based on popular or significant nearby places, so while
 usually accurate, they might not always perfectly match your exact photo spots.
 
-To use the GeoNames data, you need to manually unzip the file and use `-g` (`--geocode`) with the full path and filename of the resulting `txt` file.
+To use the GeoNames data, you need to manually decompress the `.zip` file and use `-g` (`--geocode`) with the full path and filename of the resulting `.txt` file.
 
 >[!TIP]
->If your photos span multiple countries, consider using the full `allCountries.txt` GeoNames dataset for best results. It can take several minutes to load, but ensures accurate location names across borders.
+>If your photos span multiple countries, consider using the full `allCountries.txt` dataset for best results. It can take several minutes to load, but ensures accurate location names across borders.
 
 ## 📦 Download
 
@@ -133,10 +136,10 @@ GroupMachine [options] -o <destination folder> <source folder> [<source folder> 
   Time threshold in hours. If two consecutive photos or videos are taken more than this many hours apart, a new album is started. Set to `0` to disable time-based grouping.
 
 - **`-g <file>`, `--geocode <file>`**   
-  Full path to a GeoNames database file in `.txt` format. Providing this file enables automatic renaming of albums based on location data.
+  Full path to a [GeoNames database file](https://www.geonames.org/datasources/) in `.txt` format. Providing this file enables automatic renaming of albums based on location data.
 
 >[!TIP]
->Store the GeoNames database file on your computer’s SSD to speed up loading. Using an HDD or network share may cause significant delays.
+>Store the [GeoNames database file](https://www.geonames.org/datasources/) on your computer’s SSD to speed up loading. Using an HDD or network share will cause significant delays.
 
 - **`-f <format>`, `--format <format>`** 
   Date format used for album folder names. This follows the [.NET DateTime format syntax](#datetime-format-syntax). The default is `dd MMM yyyy` (e.g., `20 Jul 2025`). Used when no GeoNames data is provided or no location can be determined.
@@ -179,3 +182,24 @@ The `-f` (`--format`) and `-a` (`--append`) options accept date formats using th
 |`dd-MM-yyyy`|Day-month-year with dashes|`20-07-2025`|
 
 For more detailed information, please refer to [this page](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings#:~:text=The%20following%20table%20describes%20the%20custom%20date%20and%20time%20format%20specifiers%20and%20displays%20a%20result%20string%20produced%20by%20each%20format%20specifier.) authored by Microsoft.
+
+## 🛟 Questions/problems?
+
+Please raise an issue at https://github.com/mrsilver76/groupmachine/issues.
+
+## 💡 Future development: open but unplanned
+
+GroupMachine currently meets the needs it was designed for, and no major new features are planned at this time. However, the project remains open to community suggestions and improvements. If you have ideas or see ways to enhance the tool, please feel free to submit a [feature request](https://github.com/mrsilver76/groupmachine/issues).
+
+## 📝 Attribution
+
+- Gallery icons by Freepik - Flaticon (https://www.flaticon.com/free-icons/gallery)
+- Apple and iCloud are trademarks of Apple Inc., registered in the U.S. and other countries. This tool is not affiliated with or endorsed by Apple Inc.
+- Google and Google Photos are trademarks of Google LLC. This tool is not affiliated with or endorsed by Google LLC.
+- .NET is a trademark of Microsoft Corporation. This tool is developed using the .NET platform but is not affiliated with or endorsed by Microsoft.
+- GeoNames is a project of Unxos GmbH. This tool is not affiliated with or endorsed by Unxos GmbH.
+
+## 🕰️ Version history
+
+### 1.0.0 (xx xx 2025)
+- 🏁 Initial release. Declared as stable.
