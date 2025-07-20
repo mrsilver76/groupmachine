@@ -27,13 +27,13 @@ naturally reflects your trips, events, or outings without manual sorting.
 - ✂️ Optionally moves files or leaves source files untouched (copy mode)
 - 📘 Logs all actions, including skipped files, errors, and final summaries.
 
-## 🧩 How Does Grouping Work?
+## 🧩 How does grouping work?
 
 Grouping is based on two key factors: the time between shots and the distance between their locations. When the gap between consecutive
 photos or videos exceeds either the time or distance threshold, a new album is started.
 
 Using the default thresholds (48 hours and 50 km) means that photos/videos taken less than two days apart and within 50 kilometres will be grouped together.
-For example, pictures/videos taken during a single day trip or a weekend away will usually fall into the same album. If you then travel to a different city
+For example, photos/videos taken during a single day trip or a weekend away will usually fall into the same album. If you then travel to a different city
 a few days later, that will create a new album. This approach is designed to reflect natural breaks in your timeline, capturing major location changes or extended time gaps.
 
 Because the grouping relies on metadata timestamps and GPS coordinates, it assumes your media files include accurate time and location information.
@@ -45,7 +45,7 @@ You can override these defaults using `-t` (`--time`) and `-d` (`--distance`).
 >[!NOTE]
 >Videos with embedded GPS data are not currently supported. Most consumer devices (including iPhones) do not store location metadata in videos, so location-based grouping only applies to photos. However, videos will still be included in albums based on time proximity - if they fall within the configured time threshold, they’ll be grouped alongside nearby photos.
 
-## 🧭 Enhancing Album Names Using Location Data
+## 🧭 Enhancing album names using location data
 
 By default, album folders are named using date ranges reflecting when the photos or videos were taken. However, you can improve folder naming by using
 the [GeoNames](https://www.geonames.org/) database, which links GPS coordinates to nearby place names.
@@ -165,7 +165,7 @@ GroupMachine [options] -o <destination folder> <source folder> [<source folder> 
 - **`/?`. `-h`, `--help`**  
   Displays the full help text with all available options, credits and the location of the log files.
 
-### DateTime Format Syntax
+### DateTime format syntax
 
 The `-f` (`--format`) and `-a` (`--append`) options accept date formats using the .NET DateTime format syntax, allowing you to customize how dates appear in album names. Below is a list of commonly used date formats for your reference:
 
@@ -187,9 +187,14 @@ For more detailed information, please refer to [this page](https://learn.microso
 
 Please raise an issue at https://github.com/mrsilver76/groupmachine/issues.
 
-## 💡 Future development: open but unplanned
+## 💡 Possible future enhancements
 
-GroupMachine currently meets the needs it was designed for, and no major new features are planned at this time. However, the project remains open to community suggestions and improvements. If you have ideas or see ways to enhance the tool, please feel free to submit a [feature request](https://github.com/mrsilver76/groupmachine/issues).
+These features are currently under consideration and may or may not be implemented. There is no commitment to deliver them, and no timeline has been established for their development. They represent exploratory ideas intended to improve the tool's functionality and usability.
+
+- [ ] Seralising the GeoNames database file into a binary file for much faster subsequent loads.
+- [ ] Support for embedded location data within `.mp4` and `.mov` video files. This requires sample videos that implement this capability.
+
+If you're particularly enthusiastic about any of these potential features or have ideas of your own, you’re encouraged to raise a [feature request](https://github.com/mrsilver76/groupmachine/issues).
 
 ## 📝 Attribution
 
