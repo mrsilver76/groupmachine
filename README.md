@@ -108,6 +108,36 @@ Each release includes the following files (`x.x.x` denotes the version number):
 >[!NOTE]
 >Docker, Synology DSM, and macOS environments have not been tested, and no platform-specific guidance is available as these setups are outside the developer’s experience. While GroupMachine should work fine on them, support will be limited to questions directly related to the tool itself.
 
+## 🚀 Quick start guide
+
+This is the simplest way to use GroupMachine. It scans `d:\Photos` (and all sub-folders) for photo/video content and moves it into dated subfolders within `e:\My Album`. It uses the default thresholds (48 hours and 50 km) and default date format (eg `20 Jul 2025`).
+
+```
+GroupMachine "d:\Photos" -r -o "e:\My Album"
+
+GroupMachine "d:\Photos" --recursive --output "e:\My Album"
+```
+
+This is a more complicated example that uses the GeoNames database (and the `allCountries.txt`) database file for naming folders and appends the four-digit year onto the album name.
+
+```
+GroupMachine "d:\Photos" -o "e:\My Album" -r -g c:\temp\allCountries.txt -a "YYYY"
+
+GroupMachine "d:\Photos" --output "e:\My Album" --recursive --geocode "c:\temp\allCountries.txt" --append "YYYY"
+```
+
+This example shows how to change the thresholds (to 24 hours and 10 km), the date format of the folder names (to ISO-8601 format) and to skip looking for videos.
+
+```
+GroupMachine "d:\Photos" -r -o "e:\My Album" -t 24 -d 10 -f "yyyy-MM-dd" -nv
+
+GroupMachine "d:\Photos" --recursive --output "e:\My Album" --time 24 --distance 10 --format "yyyy-MM-dd" --no-videos
+
+```
+
+>[!TIP]
+>Use `-s` (`--simulate`) to preview how your albums will be grouped - no files are moved or copied, so it’s a safe way to fine-tune all your settings before committing. To better understand what’s happening during processing, check the log file (the location is shown when you run `-h` or `--help`).
+
 ## 💻 Command line options
 
 GroupMachine is a command-line tool. Run it from a terminal or command prompt, supplying all options and arguments directly on the command line. Logs with detailed information are also written and you can find the log file location using `--help` (`-h`).
@@ -193,7 +223,9 @@ These features are currently under consideration and may or may not be implement
 
 - [ ] Seralising the GeoNames database file into a binary file for much faster subsequent loads.
 - [ ] Support for embedded location data within `.mp4` and `.mov` video files. This requires sample videos that implement this capability.
-- [ ] Support for entering units (`km` or `m`) when changing the distance threshold. 
+- [ ] Re-order the arguments list and group into sub-sections
+- [ ] Support for entering units (`km` or `m`) when changing the distance threshold.
+- [ ] Support for entering units (`h` or `d`) when changing the time threshold.
 
 If you're particularly enthusiastic about any of these potential features or have ideas of your own, you’re encouraged to raise a [feature request](https://github.com/mrsilver76/groupmachine/issues).
 
@@ -207,5 +239,5 @@ If you're particularly enthusiastic about any of these potential features or hav
 
 ## 🕰️ Version history
 
-### 1.0.0 (xx xx 2025)
-- 🏁 Initial release. Declared as stable.
+### 0.9.0 (xx xx 2025)
+- 🏁 Initial release.
