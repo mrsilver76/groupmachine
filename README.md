@@ -146,7 +146,7 @@ GroupMachine is a command-line tool. Run it from a terminal or command prompt, s
 GroupMachine [options] -o <destination folder> <source folder> [<source folder> ...]
 ```
 
-### Mandatory arguments
+### Required
 
 - **`-o <folder>`, `--output <folder>`**   
   Specifies the destination folder for grouped albums. If the folder does not exist, it will be created automatically.
@@ -154,34 +154,10 @@ GroupMachine [options] -o <destination folder> <source folder> [<source folder> 
 - **`<source folder> [<source folder> ...]`**   
   One or more folders containing the photos and videos to be grouped.
 
-### Optional arguments
-
-- **`-c`, `--copy`**   
-  Copy files from the source folder to the destination folder instead of moving them.
-
-- **`-d <number>`, `--distance <number>`**   
-  Distance threshold in kilometers. If two consecutive photos or videos are taken more than this distance apart, a new album is started. Set to `0` to disable distance-based grouping.
-
-- **`-t <number>`, `--time <number>`**   
-  Time threshold in hours. If two consecutive photos or videos are taken more than this many hours apart, a new album is started. Set to `0` to disable time-based grouping.
-
-- **`-g <file>`, `--geocode <file>`**   
-  Full path to a [GeoNames database file](https://www.geonames.org/datasources/) in `.txt` format. Providing this file enables automatic renaming of albums based on location data.
-
->[!TIP]
->For optimal speed when using the [GeoNames database file](https://www.geonames.org/datasources/), keep it on a local SSD - loading from a network share, USB drive or HDD can cause significant delays.
-
-- **`-f <format>`, `--format <format>`** 
-  Date format used for album folder names. This follows the [.NET DateTime format syntax](#datetime-format-syntax). The default is `dd MMM yyyy` (e.g., `20 Jul 2025`). Used when no GeoNames data is provided or no location can be determined.
-
-- **`-a <format>`, `--append <format>`**  
-  Date format to append to album names. Useful to distinguish multiple visits to the same location. Also uses the [.NET DateTime format syntax](#datetime-format-syntax).
+### File selection
 
 - **`-r`, `--recursive`**  
   Recursively scan all subfolders within the specified source folders.
-
-- **`-s`, `--simulate`**  
-  Runs all processing steps but does not copy or move any files. Ideal for testing and previewing changes.
 
 - **`-np`, `--no-photos`**  
   Exclude photos (`.jpg`, `.jpeg`) from scanning.
@@ -189,13 +165,48 @@ GroupMachine [options] -o <destination folder> <source folder> [<source folder> 
 - **`-nv`, `--no-videos`**  
   Exclude videos (`.mp4`, `.mov`) from scanning.
 
-- **`-nh`, `--no-hash-check`**  
-  Skip checking for duplicate files based on content hashes in the destination folder.
+### Grouping logic
+
+- **`-d <number>`, `--distance <number>`**   
+  Distance threshold in kilometers. If two consecutive photos or videos are taken more than this distance apart, a new album is started. Set to `0` to disable distance-based grouping.
+
+- **`-t <number>`, `--time <number>`**   
+  Time threshold in hours. If two consecutive photos or videos are taken more than this many hours apart, a new album is started. Set to `0` to disable time-based grouping.
+
+### Album naming
+
+- **`-g <file>`, `--geocode <file>`**   
+  Full path to a [GeoNames database file](https://www.geonames.org/datasources/) in `.txt` format. Providing this file enables automatic renaming of albums based on location data.
 
 >[!TIP]
->Hash checking can be slow when dealing with lots of files in the source or destination. If you're not concerned about duplicates with different names, use `-nh` (`--no-hash-check`) to skip
->this step and speed things up. Files are never overwritten, even if duplicates exist.
+>For optimal speed when using the [GeoNames database file](https://www.geonames.org/datasources/), keep it on a local SSD - loading from a network share, USB drive or HDD can cause significant delays.
 
+- **`-f <format>`, `--format <format>`**   
+  Date format used for album folder names. This follows the [.NET DateTime format syntax](#datetime-format-syntax). The default is `dd MMM yyyy` (e.g., `20 Jul 2025`). Used when no GeoNames data is provided or no location can be determined.
+
+- **`-a <format>`, `--append <format>`**  
+  Date format to append to album names. Useful to distinguish multiple visits to the same location. Also uses the [.NET DateTime format syntax](#datetime-format-syntax).
+
+### Duplicate handling
+
+- **`-u`, `--unique-check`**   
+  Enable duplicate (uniqueness) detection based on file content using SHA-256 hashes. When enabled, both source and destination folders are scanned for duplicates by comparing file contents, not filenames. This allows detection of duplicates even if a file has been renamed or its metadata has changed.
+   
+   This option is off by default, as computing hashes can be slow - especially with large libraries or video files. If you're confident there are no renamed or hidden duplicates, this check may not be necessary.
+
+>[!NOTE]
+>Files are never overwritten. If a file with the same name already exists in the destination, it is compared by content. If the files are not identical, a number is appended to the new file (e.g., `IMG_1234 (2).jpg`) to preserve both versions.
+
+### Execution mode
+
+- **`-m`, `--move`**   
+  Move files from the source folder to the destination folder instead of copying them.
+
+- **`-s`, `--simulate`**  
+  Runs all processing steps but does not copy or move any files. Ideal for testing and previewing changes.
+
+### Help
+  
 - **`/?`. `-h`, `--help`**  
   Displays the full help text with all available options, credits and the location of the log files.
 
@@ -227,7 +238,7 @@ These features are currently under consideration and may or may not be implement
 
 - [ ] Seralising the GeoNames database file into a binary file for much faster subsequent loads.
 - [ ] Support for embedded location data within `.mp4` and `.mov` video files. This requires sample videos that implement this capability.
-- [ ] Re-order the arguments list and group into sub-sections
+- [x] Re-order the arguments list and group into sub-sections
 - [ ] Support for entering units (`km` or `m`) when changing the distance threshold.
 - [ ] Support for entering units (`h` or `d`) when changing the time threshold.
 
