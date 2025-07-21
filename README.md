@@ -169,7 +169,7 @@ GroupMachine [options] -o <destination folder> <source folder> [<source folder> 
   Full path to a [GeoNames database file](https://www.geonames.org/datasources/) in `.txt` format. Providing this file enables automatic renaming of albums based on location data.
 
 >[!TIP]
->Store the [GeoNames database file](https://www.geonames.org/datasources/) on your computer’s SSD to speed up loading. Using an HDD or network share will cause significant delays.
+>For optimal speed when using the [GeoNames database file](https://www.geonames.org/datasources/), keep it on a local SSD - loading from a network share, USB drive or HDD can cause significant delays.
 
 - **`-f <format>`, `--format <format>`** 
   Date format used for album folder names. This follows the [.NET DateTime format syntax](#datetime-format-syntax). The default is `dd MMM yyyy` (e.g., `20 Jul 2025`). Used when no GeoNames data is provided or no location can be determined.
@@ -240,4 +240,4 @@ If you're particularly enthusiastic about any of these potential features or hav
 ## 🕰️ Version history
 
 ### 0.9.0 (xx xx 2025)
-- 🏁 Initial release.
+- Initial release.
