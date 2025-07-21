@@ -192,6 +192,10 @@ GroupMachine [options] -o <destination folder> <source folder> [<source folder> 
 - **`-nh`, `--no-hash-check`**  
   Skip checking for duplicate files based on content hashes in the destination folder.
 
+>[!TIP]
+>Hash checking can be slow when dealing with lots of files in the source or destination. If you're not concerned about duplicates with different names, use `-nh` (`--no-hash-check`) to skip
+>this step and speed things up. Files are never overwritten, even if duplicates exist.
+
 - **`/?`. `-h`, `--help`**  
   Displays the full help text with all available options, credits and the location of the log files.
 
