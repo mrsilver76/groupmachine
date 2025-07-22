@@ -32,12 +32,12 @@ naturally reflects your trips, events, or outings without manual sorting.
 Grouping is based on two key factors: the time between shots and the distance between their locations. When the gap between consecutive
 photos or videos exceeds either the time or distance threshold, a new album is started.
 
-Using the default thresholds (48 hours and 50 km) means that photos/videos taken less than two days apart and within 50 kilometres will be grouped together.
+Using the default thresholds (48 hours and 50 km) means that photos/videos taken less than 2 days apart and within 50 kilometres will be grouped together.
 For example, photos/videos taken during a single day trip or a weekend away will usually fall into the same album. If you then travel to a different city
 a few days later, that will create a new album. This approach is designed to reflect natural breaks in your timeline, capturing major location changes or extended time gaps.
 
 Because the grouping relies on metadata timestamps and GPS coordinates, it assumes your media files include accurate time and location information.
-These assumptions generally hold true for photos and videos downloaded from modern smartphones or cloud backups. If the metadata is missing or invalid, GroupMachine
+These assumptions generally hold true for photos and videos taken by modern smartphones and digital cameras. If the time metadata is missing or invalid, GroupMachine
 can use the created or last modified timestamp of the file instead (whichever is the earliest). 
 
 You can override these defaults using `-t` (`--time`) and `-d` (`--distance`).
@@ -74,7 +74,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
 |Linux (64-bit Intel/AMD)|`GroupMachine-x.x.x-linux-x64`|
 |Linux (64-bit ARM), e.g. Pi 4 and newer|`GroupMachine-x.x.x-linux-arm64`|
 |Linux (32-bit ARM), e.g. Pi 3 and older|`GroupMachine-x.x.x-linux-arm`|
-|Synology DSM|`GroupMachine-x.x.x-linux-x64` 🐳 Run via Docker / Container Manager|
+|Docker, e.g. Synology NAS|`GroupMachine-x.x.x-linux-x64`|
 |macOS (Apple Silicon)|`GroupMachine-x.x.x-osx-arm64`|
 |macOS (Intel)|`GroupMachine-x.x.x-osx-x64`|
 |Other/Developers|Source code (zip / tar.gz)|
@@ -89,23 +89,21 @@ Each release includes the following files (`x.x.x` denotes the version number):
 - ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
 - Make the downloaded file executable: `chmod +x GroupMachine-x.x.x-<your-platform>`
 
-### Synology DSM users
+### Docker users
 
-- Only Plus-series models (e.g. DS918+, DS920+) support Docker/Container Manager. Value and J-series models cannot run GroupMachine this way.
-- For DSM 7.2+, use Container Manager; older versions use the Docker package.
 - Install the [.NET 8.0 runtime](https://learn.microsoft.com/en-gb/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website) inside the container or use a [.NET container image](https://learn.microsoft.com/en-gb/dotnet/core/docker/introduction#net-images).
 - ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
 - Use the `GroupMachine-x.x.x-linux-x64` binary inside the container.
-- Mount your playlist folder into the container with read access and ensure network access to Plex.
+- Mount your photo folders into the container with appropriate read and write access.
 
 ### Platform testing notes
 
 * Tested extensively: Windows 11  
 * Tested moderately: Linux (64-bit ARM, Raspberry Pi 5 only)  
-* Not tested: Windows 10, Linux (x64), Linux (32-bit ARM), Synology DSM (via Container Manager), macOS (x64 & Apple Silicon)
+* Not tested: Windows 10, Linux (x64), Linux (32-bit ARM), Docker, macOS (x64 & Apple Silicon)
 
 >[!NOTE]
->Docker, Synology DSM, and macOS environments have not been tested, and no platform-specific guidance is available as these setups are outside the developer’s experience. While GroupMachine should work fine on them, support will be limited to questions directly related to the tool itself.
+>Docker and macOS environments have not been tested, and no platform-specific guidance is available as these setups are outside the developer’s experience. While GroupMachine should work fine on them, support will be limited to questions directly related to the tool itself.
 
 ## 🚀 Quick start guide
 
@@ -167,10 +165,10 @@ GroupMachine [options] -o <destination folder> <source folder> [<source folder> 
 ### Grouping logic
 
 - **`-d <number>`, `--distance <number>`**   
-  Distance threshold in kilometers. If two consecutive photos or videos are taken more than this distance apart, a new album is started. Set to `0` to disable distance-based grouping.
+  Distance threshold in kilometers. If two consecutive photos or videos are taken more than this distance apart, a new album is started. Set to `0` to disable distance-based grouping. If not supplied, the default is 50 km.
 
 - **`-t <number>`, `--time <number>`**   
-  Time threshold in hours. If two consecutive photos or videos are taken more than this many hours apart, a new album is started. Set to `0` to disable time-based grouping.
+  Time threshold in hours. If two consecutive photos or videos are taken more than this many hours apart, a new album is started. Set to `0` to disable time-based grouping. If not supplied, the default is 48 hours.
 
 ### Album naming
 
@@ -181,10 +179,10 @@ GroupMachine [options] -o <destination folder> <source folder> [<source folder> 
 >For optimal speed when using the [GeoNames database file](https://www.geonames.org/datasources/), keep it on a local SSD - loading from a network share, USB drive or HDD can cause significant delays.
 
 - **`-f <format>`, `--format <format>`**   
-  Date format used for album folder names. This follows the [.NET DateTime format syntax](#datetime-format-syntax). The default is `dd MMM yyyy` (e.g., `20 Jul 2025`). Used when no GeoNames data is provided or no location can be determined.
+  Date format used for album folder names that use dates. This follows the [.NET DateTime format syntax](#datetime-format-syntax). The default is `dd MMM yyyy` (e.g., `20 Jul 2025`). Used when no GeoNames data is provided or no location can be determined.
 
 - **`-a <format>`, `--append <format>`**  
-  Date format to append to album names. Useful to distinguish multiple visits to the same location. Also uses the [.NET DateTime format syntax](#datetime-format-syntax).
+  Date format to append to album folder names that use locations. Useful to distinguish multiple visits to the same location. Also uses the [.NET DateTime format syntax](#datetime-format-syntax).
 
 ### Duplicate handling
 
@@ -254,5 +252,5 @@ If you're particularly enthusiastic about any of these potential features or hav
 
 ## 🕰️ Version history
 
-### 0.9.0 (xx xx 2025)
+### 0.9.0 (22 July 2025)
 - Initial release.
