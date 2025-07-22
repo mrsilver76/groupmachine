@@ -240,6 +240,7 @@ These features are currently under consideration and may or may not be implement
 - [x] Re-order the arguments list and group into sub-sections
 - [ ] Support for entering units (`km` or `m`) when changing the distance threshold.
 - [ ] Support for entering units (`h` or `d`) when changing the time threshold.
+- [ ] Command line option to enable precise locations in album names.
 
 If you're particularly enthusiastic about any of these potential features or have ideas of your own, you’re encouraged to raise a [feature request](https://github.com/mrsilver76/groupmachine/issues).
 
