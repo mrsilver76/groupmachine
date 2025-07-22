@@ -51,12 +51,11 @@ By default, album folders are named using date ranges reflecting when the photos
 the [GeoNames](https://www.geonames.org/) database, which links GPS coordinates to nearby place names.
 
 If you provide the GeoNames data, the tool will look up the nearest populated place for each group of media files and include that location in the album name.
-This can make your albums more meaningful and easier to browse - for example, “_Paris, Le Marais and Versailles_” instead of just “_5 Apr 2025 - 6 Apr 2025_”.
-You can also choose to append date information (using `-a` or `--append`) to locations you visit frequently to differentiate those albums. For instance, using `--append MMMM yyyy` would label your album as “_Paris, Le Marais and Versailles (April 2025)_”
+This can make your albums more meaningful and easier to browse - for example, "_Paris, Le Marais, and Versailles_" instead of just "_5 Apr 2025 - 6 Apr 2025_".
+You can also choose to append date information (using `-a` or `--append`) to locations you visit frequently to differentiate those albums. For instance, using `--append "MMMM yyyy"` would label your album as "_Paris, Le Marais and Versailles (April 2025)_"
 
 To use this feature, you’ll need to download one of the [GeoNames database files](https://www.geonames.org/datasources/), which are quite large and may take
-some time to process, especially the comprehensive `allCountries.txt` dataset. The location names are based on popular or significant nearby places, so while
-usually accurate, they might not always perfectly match your exact photo spots.
+some time to process, especially the comprehensive `allCountries.txt` dataset. To avoid creating an excessive number of narrowly defined albums, location names prioritise nearby recognisable places over precise landmarks (e.g. "_Paris_" rather than "_Eiffel Tower_"). This approach better reflects how people typically group their photos.
 
 To use the GeoNames data, you need to manually decompress the `.zip` file and use `-g` (`--geocode`) with the full path and filename of the resulting `.txt` file.
 
