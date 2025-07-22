@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+<PropertyGroup>
+	<OutputType>Exe</OutputType>
+	<TargetFramework>net8.0</TargetFramework>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<Nullable>enable</Nullable>
+
+	<!-- Assembly information -->
+	<ApplicationIcon>GroupMachine.ico</ApplicationIcon>
+	<Authors>Richard Lawrence</Authors>
+	<Product>GroupMachine</Product>
+	<Description>Groups photos into albums (folders) based on time and location changes</Description>
+	<PackageProjectUrl>https://github.com/mrsilver76/groupmachine</PackageProjectUrl>
+	<RepositoryUrl>https://github.com/mrsilver76/groupmachine</RepositoryUrl>
+	<Copyright>Copyright © 2025 Richard Lawrence</Copyright>
+
+	<!-- Version information -->
+	<!-- Remember major.minor.BUILD.revision! -->
+	<Version>0.9.0.0</Version>
+	<AssemblyVersion>0.9.0.0</AssemblyVersion>
+	<FileVersion>0.9.0.0</FileVersion>
+</PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ini-parser" Version="2.5.2" />
+    <PackageReference Include="MetadataExtractor" Version="2.8.1" />
+    <PackageReference Include="NetTopologySuite" Version="2.6.0" />
+  </ItemGroup>
+
+</Project>
