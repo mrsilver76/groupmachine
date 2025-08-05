@@ -4,7 +4,7 @@ It can also name these albums using real-world place names, making your collecti
 
 ## 📚 Overview
 
-This tool helps you organize large collections of photos and videos by grouping them into albums based on when and where they were taken.
+GroupMachine helps you organize large collections of photos and videos by grouping them into albums based on when and where they were taken.
 It’s especially useful if you’ve downloaded images from your camera, mobile phone or cloud service (like Apple iCloud or Google Photos),
 which often contain large, mixed sets from multiple locations and dates.
 
@@ -33,7 +33,7 @@ naturally reflects your trips, events, or outings without manual sorting.
 Grouping is based on two key factors: the time between shots and the distance between their locations. When the gap between consecutive
 photos or videos exceeds either the time or distance threshold, a new album is started.
 
-Using the default thresholds (48 hours and 50 km) means that photos/videos taken less than 2 days apart and within 50 kilometres will be grouped together.
+Using the default thresholds (48 hours and 50 km) means that photos/videos taken less than 2 days apart and within 50 kilometres (or 31 miles) will be grouped together.
 For example, photos/videos taken during a single day trip or a weekend away will usually fall into the same album. If you then travel to a different city
 a few days later, that will create a new album. This approach is designed to reflect natural breaks in your timeline, capturing major location changes or extended time gaps.
 
