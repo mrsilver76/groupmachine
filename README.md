@@ -20,11 +20,12 @@ naturally reflects your trips, events, or outings without manual sorting.
 - ⏱️ Uses a configurable time gap (default: 48 hours) to define album boundaries.
 - 📏 Uses a configurable distance gap (default: 50 km) to define album boundaries.
 - 🗺️ Supports the GeoNames database to give album folders meaningful place names.
-- 🗓️ Optionally appends extra date text to the end of album names.
-- 🧠 Detects duplicates even if filenames differ (via SHA256 content hashes)
+- 🗓️ Enables appending of extra date text to the end of album names.
+- 🧠 Uses BLAKE3 hashes to detect identical files before renaming.
 - 🧪 Simulation mode to preview changes without making any modifications.
 - 🧮 Parallel processing speeds up hashing and metadata extraction for large libraries.
-- ✂️ Optionally moves files or leaves source files untouched (copy mode)
+- ✂️ Copies, moves or links files to new album folders.
+- ⚙️ Automatic fallback to soft links when hard linking is not possible.
 - 📘 Logs all actions, including skipped files, errors, and final summaries.
 
 ## 🧩 How does grouping work?
@@ -58,7 +59,7 @@ If you frequently visit the same places, you can avoid album name collisions by 
 
 To use this feature, manually decompress a [GeoNames database](https://www.geonames.org/datasources/) `.zip` file and pass the `.txt` file using `-g` (`--geocode`).
 
-Location selection avoids overly narrow names. GroupMachine prioritises general place names (e.g. _"Paris"_) over exact landmarks (e.g. _"Eiffel Tower"_), giving you cleaner and more useful folder names. You can override this by using the `-p` (`--precise`) option to include well-known landmarks.
+Location selection avoids overly narrow names. GroupMachine prioritises general place names (e.g. _"Paris"_) over exact landmarks (e.g. _"Eiffel Tower"_), giving you cleaner and more useful album names. You can override this by using the `-p` (`--precise`) option to include well-known landmarks.
 
 >[!TIP]
 >If your photos span multiple countries, consider using the full `allCountries.txt` dataset for best results. It takes longer to load but ensures accurate results across borders.
@@ -282,7 +283,7 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - Added `-np` (`--no-part`) to suppress part number suffixes.
 - Changed album title logic: dropped popularity sorting; locations now kept in time order with the least-used removed.
 - Updated `-s` (`--simulate)` to show the destination folder structure.
-- Refactored the `(part x)` numbering logic to ignore existing folders on disk, relying on date suffixes for uniqueness.
+- Refactored the _"(part x)"_ numbering logic to ignore existing folders on disk, relying on date suffixes for uniqueness.
 - Switched to BLAKE3 for identical file checks, giving a 12x speed improvement over SHA256.
 - Removed `-u` (`--unique`) check due to poor performance (even with BLAKE3) and limited value.
 - Logger now includes OS details to assist with debugging.
