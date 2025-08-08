@@ -28,7 +28,7 @@ namespace GroupMachine
     public class GeoNamesLookup
     {
         private readonly STRtree<Place> _index = new();  // Spatial index for fast lookups
-        private static readonly HashSet<string> AdminFeatureCodes = new() { "ADM3", "ADM4" };  // Administrative features we care about
+        private static readonly HashSet<string> AdminFeatureCodes = ["ADM3", "ADM4"];  // Administrative features we care about
         private static readonly GeometryFactory _geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);  // WGS84 coordinate system
 
         public record Place
@@ -100,7 +100,7 @@ namespace GroupMachine
             var places = File.ReadLines(filePath)
                 .AsParallel()
                 .WithDegreeOfParallelism(Environment.ProcessorCount)
-                .Where(line => !string.IsNullOrWhiteSpace(line) && !line.StartsWith("#"))
+                .Where(line => !string.IsNullOrWhiteSpace(line) && !line.StartsWith('#'))
                 .Select(line =>
                 {
                     var parts = line.Split('\t');
@@ -171,8 +171,7 @@ namespace GroupMachine
             fc switch
             {
                 "P" => true,
-                "S" => false,
-                //"S" => AllowedSpotFeatures.Contains($"{fc}.{fcode}"),
+                "S" => Program.usePreciseLocation ? AllowedSpotFeatures.Contains($"{fc}.{fcode}") : false,
                 "L" => true,
                 "A" => AdminFeatureCodes.Contains(fcode),
                 _ => false
@@ -201,7 +200,7 @@ namespace GroupMachine
                 .OrderBy(x => x.Distance)
                 .ToList();
 
-            if (near.Any())
+            if (near.Count != 0)
                 return near.First().Place;
 
             var fallback = QueryNearby(point, 0.05)
@@ -213,7 +212,7 @@ namespace GroupMachine
                 .OrderBy(x => x.Distance)
                 .ToList();
 
-            if (fallback.Any())
+            if (fallback.Count != 0)
                 return fallback.First().Place;
 
             // If no place found, then give up and return nothing
@@ -233,7 +232,7 @@ namespace GroupMachine
                 point.X - radiusDegrees, point.X + radiusDegrees,
                 point.Y - radiusDegrees, point.Y + radiusDegrees);
 
-            return _index.Query(env).ToList();
+            return [.. _index.Query(env)];
         }
     }
 

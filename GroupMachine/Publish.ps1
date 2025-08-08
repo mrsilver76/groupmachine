@@ -1,5 +1,5 @@
 # PowerShell script to build and package a C# project for multiple architectures
-# Version 1.0.2 - 4th June 2025
+# Version 1.0.3 - 7th August 2025
 
 # === User Configurable Section ===
 
@@ -37,8 +37,10 @@ function Get-SemanticVersion {
     $revision = $parts[3]
 
     $semVer = "$major.$minor.$revision"
+	# If the build number is > 0 then this is an interim release between
+	# the last one and the next one, so append "-buildX" to the version
     if ([int]$build -gt 0) {
-        $semVer += "-pre$build"
+        $semVer += "-build$build"
     }
     return $semVer
 }
