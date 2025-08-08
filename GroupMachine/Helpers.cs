@@ -17,10 +17,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-using System.Text.RegularExpressions;
-using static GroupMachine.Program;
 using IniParser;
 using IniParser.Model;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
+using static GroupMachine.Program;
 
 namespace GroupMachine
 {
@@ -42,11 +43,30 @@ namespace GroupMachine
                 string arg = args[i].ToLower();
 
                 if (arg == "-m" || arg == "--move")
-                    copyFiles = false;
+                {
+                    copyMode = CopyMode.Move;
+                    copyModeText = "Moving";
+                }
+                else if (arg == "-c" || arg == "--copy")
+                {
+                    copyMode = CopyMode.Copy;
+                    copyModeText = "Copying";
+                }
+                else if (arg == "-l" || arg == "--link")
+                {
+                    copyMode = CopyMode.HardLink;
+                    copyModeText = "Linking";
+                }
+                else if (arg == "-p" || arg == "--precise")
+                    usePreciseLocation = true;
                 else if (arg == "-r" || arg == "--recursive")
                     scanRecursive = true;
                 else if (arg == "-s" || arg == "--simulate")
                     testMode = true;
+                else if (arg == "-nr" || arg == "--no-range")
+                    useDateRange = false;
+                else if (arg == "-np" || arg == "--no-part" || arg == "--no-parts")
+                    usePartNumbers = false;
                 else if ((arg == "-d" || arg == "--distance") && i + 1 < args.Length)
                 {
                     if (double.TryParse(args[i + 1], out double distance))
@@ -98,8 +118,6 @@ namespace GroupMachine
                     noVideos = true;
                 else if (arg == "-np" || arg == "--no-photo" || arg == "--no-photos")
                     noPhotos = true;
-                else if (arg == "-u" || arg == "--unique-check" || arg == "--unique")
-                    doHashCheck = true;
                 else if (arg.StartsWith('-'))
                     DisplayUsage($"Unrecognized option '{arg}'.");
 
@@ -123,6 +141,9 @@ namespace GroupMachine
 
             if (sourceFolders.Count == 0)
                 DisplayUsage("No source folders specified. Please provide at least one source folder.");
+
+            if (copyMode == CopyMode.Unknown)
+                DisplayUsage("No copy mode specified. Use -m, -c, or -l to specify how files should be handled.");
 
             foreach (var folder in sourceFolders)
             {
@@ -198,6 +219,11 @@ namespace GroupMachine
             Console.WriteLine(  "Options:\n" +
                                 "  Required:\n" +
                                 "    -o, --output <folder>   Destination folder for grouped albums.\n" +
+                                "    One of the following copy modes must be specified:\n" +
+                                "      -m, --move            Move files to destination.\n" +
+                                "      -c, --copy            Copy files to destination.\n" +
+                                "      -l, --link            Create hardlinks in destination folder\n" +
+                                "                            (uses softlinks if not possible)\n" +
                                 "  File selection:\n" +
                                 "    -r, --recursive         Include all sub-folders when scanning.\n" +
                                 "    -nv, --no-video         Exclude videos from processing.\n" +
@@ -212,16 +238,18 @@ namespace GroupMachine
                                 "                            If not specified, album names will use dates.\n" +
                                 "    -f, --format            Album folder date format (default: dd MMM yyyy)\n" +
                                 "                            Example: \"yyyy-MM-dd\" → 2025-07-15\n" +
+                                "    -p, --precise           Use precise named location for album names.\n" +
+                                "                            (e.g. stations, parks, landmarks, etc.)\n" +
                                 "    -a, --append            Date format appended to geolocated album names.\n" +
                                 "                            Example: \"MMMM YYYY\" → July 2025\n" +
-                                "  Duplicate handling:\n" +
-                                "    -u, --unique-check      Check for duplicate files in source and destination.\n" +
-                                "                            Note: Comparison is based on file content (SHA-256\n" +
-                                "                            hashes) and not file names or timestamps.\n" +
-                                "  Execution mode:\n" +
-                                "    -m, --move              Move files instead of copying them.\n" +
-                                "    -s, --simulate          Show actions only, don't move or copy files.\n" +
-                                "  Help:\n" +
+                                "    -nr, --no-range         Don't use a date range for albums. When enabled\n" +
+                                "                            album names will be the date of the first item.\n" +
+                                "    -np, --no-part          Don't use part numbers in album names. If\n" +
+                                "                            multiple groups form on the same day due to\n" +
+                                "                            distance, they won’t be split into albums\r\n" +
+                                "                            with part-number suffixes.\n" +
+                                "  Others:\n" +
+                                "    -s, --simulate          Test mode, don't move, copy or link files.\n" +
                                 "    /?, -h, --help          Display this help screen.\n\n" +
                                $"Logs are stored in {Path.Combine(appDataPath, "Logs")}");
 
@@ -253,6 +281,24 @@ namespace GroupMachine
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Output to the logs the environment information, such as .NET version, OS and architecture.
+        /// Also includes the parsed command line arguments if any were provided.
+        /// </summary>
+        /// <param name="args"></param>
+        public static void LogEnvironmentInfo(string[] args)
+        {
+            var dotnet = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
+            var os = System.Runtime.InteropServices.RuntimeInformation.OSDescription.Trim();
+
+            var archName = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
+
+            Logger($"Running {OutputVersion(version)} on {dotnet} ({os}, {archName})", true);
+
+            if (args.Length > 0)
+                Logger($"Parsed arguments: {string.Join(" ", args)}", true);
         }
 
         /// <summary>
@@ -392,8 +438,6 @@ namespace GroupMachine
         /// <returns></returns>
         private static bool NeedsCheck(IniData ini, out Version? cachedVersion)
         {
-            cachedVersion = null;
-
             string dateStr = ini["Version"]["LatestReleaseChecked"];
             string versionStr = ini["Version"]["LatestReleaseVersion"];
 
@@ -476,9 +520,9 @@ namespace GroupMachine
             // Build the base semantic version string
             string result = $"{major}.{minor}.{revision}";
 
-            // Append `-preX` if build is greater than 0
+            // Append "(dev build x)" if build is greater than 0
             if (netVersion.Build > 0)
-                result += $"-pre{netVersion.Build}";
+                result += $" (dev build {netVersion.Build})";
 
             return result;
         }

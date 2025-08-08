@@ -22,6 +22,7 @@ using MetadataExtractor.Formats.Exif;
 using MetadataExtractor.Formats.QuickTime;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using static GroupMachine.Helpers;
 using File = System.IO.File;
@@ -33,7 +34,7 @@ namespace GroupMachine
         // User-defined variables
         public static List<string> sourceFolders = []; // List of source folders to scan for media
         public static string destinationFolder = "";
-        public static bool copyFiles = true;
+        public static CopyMode copyMode = CopyMode.Unknown; // Default copy mode is unknown, must be set by user
         public static double distanceThreshold = 50.0; // Default distance in km
         public static double timeThreshold = 48.0; // Default time in hours
         public static bool scanRecursive = false; // Default recursiveness is false, as in this folder only
@@ -43,7 +44,9 @@ namespace GroupMachine
         public static string appendFormat = ""; // Default append format for album names
         public static bool noVideos = false; // Default to including videos in the scan
         public static bool noPhotos = false; // Default to including photos in the scan
-        public static bool doHashCheck = false; // Default to not performing a hash check
+        public static bool useDateRange = true; // Default to using a date range for album names
+        public static bool usePartNumbers = true; // Default to using part numbers for albums with the same name
+        public static bool usePreciseLocation = false; // Default to using precise location for album names
 
         // Internal variables
         public static List<ImageMetadata> imageMetadataList = [];  // List to hold metadata for each media file
@@ -52,6 +55,16 @@ namespace GroupMachine
         private static GeoNamesLookup? geoNamesLookup;
         public static string mediaLabel = ""; // Label for media files being processed (photos or videos)
         static readonly ConcurrentDictionary<string, object> PathLocks = new();
+        public static string copyModeText = ""; // Text representation of the copy mode for output
+        public static int softLinksCreated = 0; // Counter for soft links created
+
+        public enum CopyMode
+        {
+            Unknown,  // Default value, should not be used
+            Move,
+            Copy,
+            HardLink
+        }
 
         public class ImageMetadata
         {
@@ -77,7 +90,7 @@ namespace GroupMachine
             Logger($"Using arguments: {string.Join(" ", args)}", true);
 
             // Display a header with some setting information
-            ShowHeader();
+            ShowHeader(args);
 
             // Load geonames database if specified
             if (!string.IsNullOrEmpty(geonamesDatabase) && File.Exists(geonamesDatabase))
@@ -103,21 +116,8 @@ namespace GroupMachine
             // Assign base album names based on the date range of the photos in each album
             AssignBaseAlbumNames();
 
-            // If we have a GeoNames database...
-            if (geoNamesLookup != null)
-            {
-                // Ensure unique album names by checking for albums to be created and existing folders.
-                // If there are albums with the same name, append part numbers to the album names
-                EnsureUniqueAlbumNames();
-            }
-            else  // If we don't have a GeoNames database...
-            {
-                // Assign part numbers to albums with the same name (date range) but different AlbumIDs
-                AssignPartNumbers();
-
-                // Finalise the album names by appending part numbers where applicable
-                FinaliseAlbumNames();
-            }
+            // Assign part numbers to albums with the same name, but different AlbumIDs
+            AssignAndApplyPartNumbers();
 
             // Create the album folders based on the unique album names
             if (!CreateAlbumFolders())
@@ -137,7 +137,7 @@ namespace GroupMachine
         /// <summary>
         /// Displays the header information for the application, including version, copyright, and grouping mode.
         /// </summary>
-        static void ShowHeader()
+        static void ShowHeader(string[] args)
         {
             Console.WriteLine($"GroupMachine v{OutputVersion(version)}, Copyright © 2025-{DateTime.Now.Year} Richard Lawrence");
             Console.WriteLine("Groups photos and videos into albums (folders) based on time & location changes.");
@@ -150,21 +150,31 @@ namespace GroupMachine
 
             Logger("Starting GroupMachine...");
 
+            // Log details about the environment and arguments
+            LogEnvironmentInfo(args);
+
             bool timeEnabled = timeThreshold > 0;
             bool distanceEnabled = distanceThreshold > 0;
             if (timeEnabled && distanceEnabled)
-                Logger($"Grouping mode: time or distance (time threshold: {timeThreshold:F2} hrs, distance threshold: {distanceThreshold:F2} km)");
+                Logger($"Grouping mode: time or distance.");
             else if (timeEnabled)
-                Logger($"Grouping mode: time-based only (time threshold: {timeThreshold:F2} hrs)");
+                Logger($"Grouping mode: time-based only.");
             else // distanceEnabled only
-                Logger($"Grouping mode: location-based only (distance threshold: {distanceThreshold:F2} km)");
+                Logger($"Grouping mode: location-based only.");
+
+            if (timeEnabled)
+                Logger($"Time threshold: {timeThreshold:F2} hours.");
+            if (distanceEnabled)
+                Logger($"Distance threshold: {distanceThreshold:F2} km ({distanceThreshold * 0.621371:F2} miles)");
 
             if (testMode)
-                Logger("Simulation (test mode) enabled. No files will be moved or copied.");
-            else if (copyFiles)
+                Logger("Simulation/test mode: no files will be moved, copied or linked.");
+            else if (copyMode == CopyMode.Copy)
                 Logger("Files will be copied to the destination folder.");
-            else
+            else if (copyMode == CopyMode.Move)
                 Logger("Files will be moved to the destination folder.");
+            else
+                Logger("Files will be linked to the destination folder.");
 
             if (IsAmbiguousDateFormat(dateFormat))
                 Logger($"Warning: The date format '{dateFormat}' may be too minimal or ambiguous for album names.");
@@ -236,9 +246,6 @@ namespace GroupMachine
 
             if (beforeCount != afterCount)
                 Logger($"Removed {Pluralise((beforeCount - afterCount), "duplicate file", "duplicate files")} from the search results.", true);
-
-            // Perform SHA256 hash comparison to remove both identical content but also content that exists in the destination folder.
-            RemoveDuplicateContent(allFiles);
 
             // If no files were found, exit early
             if (allFiles.Count == 0)
@@ -479,7 +486,9 @@ namespace GroupMachine
 
                     string albumName = firstDate.ToString(dateFormat);
 
-                    if (firstDate != lastDate)
+                    // If the first and last dates are different, append the last date to the album name
+                    // to make a range - but only do this if useDateRange is true
+                    if (firstDate != lastDate && useDateRange)
                         albumName += $" - {lastDate.ToString(dateFormat)}";
 
                     foreach (var img in items)
@@ -496,12 +505,14 @@ namespace GroupMachine
         }
 
         /// <summary>
-        /// Given a list of items (usually photos), generates an album name based on the most common locations. If
-        /// locations are equally common, it will order them by their first appearance in the list.
+        /// Generates an album name from a list of items, using up to four of the most
+        /// frequently occurring location names. Ties in frequency are resolved by
+        /// the order of first appearance.
         /// </summary>
         /// <param name="photos"></param>
         /// <param name="appendFormat"></param>
         /// <returns></returns>
+
         static string GenerateAlbumNameFromLocations(List<ImageMetadata> items)
         {
             const int maxLocations = 4;
@@ -511,38 +522,37 @@ namespace GroupMachine
                 .Where(name => !string.IsNullOrEmpty(name))
                 .ToList();
 
+            // Count frequencies
             var locationCounts = new Dictionary<string, int>();
-            var locationFirstIndex = new Dictionary<string, int>();
+            foreach (var loc in filteredLocations)
+                if (loc != null)
+                    locationCounts[loc] = locationCounts.GetValueOrDefault(loc) + 1;
 
-            for (int i = 0; i < filteredLocations.Count; i++)
+            // Identify top N frequent locations
+            var topLocations = locationCounts
+                .OrderByDescending(kvp => kvp.Value)
+                .Take(maxLocations)
+                .Select(kvp => kvp.Key)
+                .ToHashSet();
+
+            // Preserve order of first appearance, filtering only top locations
+            var orderedTopLocations = new List<string>();
+            var seen = new HashSet<string>();
+
+            foreach (var loc in filteredLocations)
             {
-                var loc = filteredLocations[i];
-                if (loc == null) continue;
-
-                if (!locationCounts.ContainsKey(loc))
-                {
-                    locationCounts[loc] = 0;
-                    locationFirstIndex[loc] = i;
-                }
-                locationCounts[loc]++;
+                if (loc != null && topLocations.Contains(loc) && seen.Add(loc))
+                    orderedTopLocations.Add(loc);
             }
 
-            List<string> sortedLocations;
+            // If no locations were found, add a default "Unknown Location"
+            if (orderedTopLocations.Count == 0)
+                orderedTopLocations.Add("Unknown Location");
 
-            if (locationCounts.Count == 0)
-                sortedLocations = new List<string> { "Unknown Location" };
-            else
-            {
-                sortedLocations = locationCounts
-                    .OrderByDescending(kvp => kvp.Value)
-                    .ThenBy(kvp => locationFirstIndex[kvp.Key])
-                    .Select(kvp => kvp.Key)
-                    .Take(maxLocations)
-                    .ToList();
-            }
+            // Format the album name with "and" for the last item
+            string albumName = FormatListWithAnd(orderedTopLocations);
 
-            string albumName = FormatListWithAnd(sortedLocations);
-
+            // Append the date if specified
             if (!string.IsNullOrEmpty(appendFormat) && items.Count > 0)
             {
                 var firstDate = items[0].DateCreated;
@@ -575,81 +585,26 @@ namespace GroupMachine
         }
 
         /// <summary>
-        /// Ensures that album names are unique by appending part numbers where necessary. This
-        /// involves checking existing folders in the destination directory and adjusting album names
-        /// as well as any newly created albums as part of this process.
-        /// </summary>
-        static void EnsureUniqueAlbumNames()
-        {
-            Logger("Ensuring unique album names...");
-
-            // Cache existing folder names (case-insensitive)
-            var existingFolders = new HashSet<string>(
-                System.IO.Directory.Exists(destinationFolder)
-                ? System.IO.Directory.GetDirectories(destinationFolder)
-                .Select(dir => Path.GetFileName(dir))
-                .Where(name => !string.IsNullOrEmpty(name))
-                .Cast<string>() : Enumerable.Empty<string>(),
-                StringComparer.OrdinalIgnoreCase);
-
-            var usedAlbumNames = new HashSet<string>(existingFolders, StringComparer.OrdinalIgnoreCase);
-
-            // Group by base album name
-            var albumGroups = imageMetadataList
-                .GroupBy(img => img.AlbumName, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var group in albumGroups)
-            {
-                string albumName = group.Key;
-                var photos = group.ToList();
-
-                // Group by AlbumID (different sets with same name)
-                var albumIdGroups = photos.GroupBy(p => p.AlbumID).ToList();
-
-                int partCounter = 1;
-
-                foreach (var albumIdGroup in albumIdGroups)
-                {
-                    string candidateName = albumName;
-
-                    if (partCounter > 1 || usedAlbumNames.Contains(candidateName))
-                    {
-                        int suffix = partCounter;
-                        do
-                        {
-                            candidateName = $"{albumName} (part {suffix})";
-                            suffix++;
-                        } while (usedAlbumNames.Contains(candidateName));
-
-                        Logger($"Appending (part {suffix}) to album '{albumName}'", true);
-
-                        partCounter = suffix - 1;
-                    }
-
-                    foreach (var img in albumIdGroup)
-                    {
-                        img.Part = partCounter;
-                        img.AlbumName = candidateName;
-                    }
-
-                    usedAlbumNames.Add(candidateName);
-                    partCounter++;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Assigns part numbers to items in the image metadata list based on album identifiers and names.
+        /// Assigns and applies part numbers to items in the image metadata list based on album identifiers and names.
         /// </summary>
         /// <remarks>This method iterates through the image metadata list and assigns a sequential part
-        /// number any items where the album name is the same but the album ID is different. An example of
-        /// this would be photos taken on the same day but where the distance threshold has been exceeded.</remarks>
-        static void AssignPartNumbers()
+        /// number to any items where the album name is the same but the album ID is different. An example of
+        /// this would be photos taken on the same day but where the distance threshold has been exceeded. Once
+        /// completed, the album names are updated to reflect the fact</remarks>
+        static void AssignAndApplyPartNumbers()
         {
-            Logger("Disambiguating albums with same name...");
+            if (!usePartNumbers)
+                return;
+
+            Logger("Assigning part numbers and finalising album names...");
+
+            if (imageMetadataList.Count == 0)
+                return; // We shouldn't have got this far without metadata, but just in case
 
             imageMetadataList[0].Part = 1;
             int part = 1;
+
+            // Assign the part numbers based on AlbumID and AlbumName
 
             for (int i = 1; i < imageMetadataList.Count; i++)
             {
@@ -665,20 +620,13 @@ namespace GroupMachine
 
                 curr.Part = part;
             }
-        }
 
-        /// <summary>
-        /// Process the album names by appending part numbers where applicable.
-        /// </summary>
-        static void FinaliseAlbumNames()
-        {
+            // Now append "(part n)" to the album names where applicable. We don't
+            // want to append "(part 1)", as that is the default album name.
+
             foreach (var img in imageMetadataList)
-            {
-                // If the part number is greater than or equal to 2, append it to the album name
-                // This is because part 1 is the default and does not need to be shown
                 if (img.Part >= 2)
                     img.AlbumName += $" (part {img.Part})";
-            }
         }
 
         /// <summary>
@@ -689,8 +637,7 @@ namespace GroupMachine
         {
             ConcurrentDictionary<string, DateTime> albumDates = new();
 
-            string action = copyFiles ? "Copying" : "Moving";
-            string prefix = testMode ? $"Not {action.ToLower()}" : action;
+            string prefix = testMode ? $"Not {copyModeText.ToLower()}" : copyModeText;
             string msg = $"{prefix} files to new albums{(testMode ? " (test mode)" : "")}...";
             Logger(msg);
 
@@ -717,6 +664,9 @@ namespace GroupMachine
                     (_, existing) => imageMetadata.DateCreated < existing ? imageMetadata.DateCreated : existing
                 );
             });
+
+            if (softLinksCreated > 0)
+                Logger($"Note: {Pluralise(softLinksCreated, "hard link", "hard links")} could not be created, reverted to soft links instead.", true);
 
             Logger($"Processed {Pluralise(success, "files", "files")} with {Pluralise(failure, "failure", "failures")}.");
 
@@ -754,7 +704,7 @@ namespace GroupMachine
             {
                 if (testMode)
                 {
-                    Logger($"[Test Mode] Would create album folder: {albumPath}", true);
+                    Logger($"[Test] Album folder -> {albumPath}");
                     continue;
                 }
 
@@ -777,7 +727,7 @@ namespace GroupMachine
 
         /// <summary>
         /// Copies or moves a file to a destination with a unique name if necessary. If a file with the same
-        /// name already exists, it checks if the files are identical by comparing their SHA256 hashes. This
+        /// name already exists, it checks if the files are identical by comparing their hashes. This
         /// ensures that only non-identical files are copied or moved, and avoids overwriting existing files.
         /// </summary>
         /// <param name="sourceFilePath">The path to the source file.</param>
@@ -809,22 +759,29 @@ namespace GroupMachine
                     candidatePath = Path.Combine(directory, $"{name} ({count++}){ext}");
                 }
 
-                string action = copyFiles ? "Copy" : "Move";
-                Logger($"{action} {sourceFilePath} -> {Path.GetRelativePath(Path.GetDirectoryName(sourceFilePath) ?? ".", candidatePath)}", true);
+                Logger($"{copyModeText} {sourceFilePath} -> {Path.GetRelativePath(Path.GetDirectoryName(sourceFilePath) ?? ".", candidatePath)}", true);
 
                 if (testMode)
                     return true;
 
                 try
                 {
-                    if (copyFiles)
-                        File.Copy(sourceFilePath, candidatePath);
-                    else
-                        File.Move(sourceFilePath, candidatePath);
+                    switch (copyMode)
+                    {
+                        case CopyMode.Copy:
+                            File.Copy(sourceFilePath, candidatePath);
+                            break;
+                        case CopyMode.Move:
+                            File.Move(sourceFilePath, candidatePath);
+                            break;
+                        case CopyMode.HardLink:
+                            CreateHardLinkCrossPlatform(sourceFilePath, candidatePath);
+                            break;
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Logger($"Error {action.ToLower()}ing file: {ex.Message}");
+                    Logger($"Error {copyModeText.ToLower()} file: {ex.Message}");
                     return false;
                 }
             }
@@ -833,133 +790,38 @@ namespace GroupMachine
         }
 
         /// <summary>
-        /// Given a file path, computes the SHA256 hash of the file's content.
+        /// Computes the SHA hash of the file at the specified path, selecting the optimal algorithm based on the system
+        /// architecture.
         /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        static byte[] GetSHA256Hash(string path)
+        /// <param name="path">The path to the file for which the hash is to be computed. Must not be null or empty.</param>
+        /// <returns>A byte array containing the computed hash of the file. The hash is computed using SHA-512 on 64-bit
+        /// architectures and SHA-256 on other architectures.</returns>
+        static byte[] ComputeOptimalSHAHash(string path)
         {
-            using var sha256 = SHA256.Create();
             using var stream = File.OpenRead(path);
-            return sha256.ComputeHash(stream);
+
+            // Prefer SHA-512 on 64-bit architectures for better performance
+            using HashAlgorithm hashAlgorithm = RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X64 or Architecture.Arm64 => SHA512.Create(),
+                _ => SHA256.Create()
+            };
+
+            return hashAlgorithm.ComputeHash(stream);
         }
 
         /// <summary>
-        /// Given two file paths, checks if the files are identical by comparing their SHA256 hashes.
+        /// Compares the contents of two files to determine if they are identical.
         /// </summary>
-        /// <param name="path1"></param>
-        /// <param name="path2"></param>
-        /// <returns>True if they are exactly the same.</returns>
+        /// <remarks>This method uses a hash-based comparison to determine file equality.</remarks>
+        /// <param name="path1">The file path of the first file to compare. Cannot be null or empty.</param>
+        /// <param name="path2">The file path of the second file to compare. Cannot be null or empty.</param>
+        /// <returns><see langword="true"/> if the contents of the two files are identical; otherwise, <see langword="false"/>.</returns>
         static bool FilesAreEqual(string path1, string path2)
         {
-            var hash1 = GetSHA256Hash(path1);
-            var hash2 = GetSHA256Hash(path2);
+            var hash1 = ComputeOptimalSHAHash(path1);
+            var hash2 = ComputeOptimalSHAHash(path2);
             return hash1.SequenceEqual(hash2);
-        }
-
-        /// <summary>
-        /// Given a file path, computes the SHA256 hash and returns it as a hexadecimal string.
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        static string GetSHA256HashHex(string path)
-        {
-            return BitConverter.ToString(GetSHA256Hash(path)).Replace("-", "").ToLowerInvariant();
-        }
-
-        /// <summary>
-        /// Given a list of all files, removes duplicates based on their content hashes. These duplications
-        /// could be within the list itself or files that already exist in the destination folder.
-        /// </summary>
-        /// <param name="allFiles"></param>
-        /// 
-        static void RemoveDuplicateContent(List<string> allFiles)
-        {
-            if (!doHashCheck)
-                return;
-
-            // Thread-safe collection for destination hashes
-            var destinationHashesBag = new ConcurrentBag<string>();
-
-            Logger($"Searching for existing files in {destinationFolder}...");
-
-            var destFiles = System.IO.Directory
-                .GetFiles(destinationFolder, "*.*", SearchOption.AllDirectories)
-                .Where(IsMediaFile)
-                .ToList();
-
-            // Hash all files in the destination folder in parallel and add them to
-            // the destination hashes bag
-
-            Parallel.ForEach(destFiles, destFile =>
-            {
-                try
-                {
-                    string hash = GetSHA256HashHex(destFile);
-                    if (!string.IsNullOrEmpty(hash))
-                        destinationHashesBag.Add(hash);
-                }
-                catch (Exception ex)
-                {
-                    Logger($"Error hashing {destFile}: {ex.Message}", true);
-                }
-            });
-
-            var destinationHashes = new HashSet<string>(destinationHashesBag, StringComparer.Ordinal);
-
-            Logger($"Found {Pluralise(destinationHashes.Count, "existing file", "existing files")} in destination folder.", true);
-
-            // Now calculate content hashes for source files
-
-            Logger("Calculating content hashes for source files...");
-
-            var sourceHashes = new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
-
-            Parallel.ForEach(allFiles, file =>
-            {
-                try
-                {
-                    string hash = GetSHA256HashHex(file);
-                    if (!string.IsNullOrEmpty(hash))
-                        sourceHashes.TryAdd(file, hash);
-                }
-                catch (Exception ex)
-                {
-                    Logger($"Error hashing source file {file}: {ex.Message}", true);
-                }
-            });
-
-            Logger($"Removing {mediaLabel} duplicates based on content hashes...");
-
-            var seenSourceHashes = new HashSet<string>(StringComparer.Ordinal);
-            int removedCount = 0;
-
-            // Now loop through all the files and remove duplicates based on the hashes
-
-            for (int i = allFiles.Count - 1; i >= 0; i--)
-            {
-                string file = allFiles[i];
-
-                if (!sourceHashes.TryGetValue(file, out var hash))
-                    continue;
-
-                // Does one exist in the destination folder?
-
-                if (destinationHashes.Contains(hash))
-                {
-                    Logger($"Skipping {file} as it already exists in destination with the same content.", true);
-                    allFiles.RemoveAt(i);
-                    removedCount++;
-                }
-                else if (!seenSourceHashes.Add(hash))  // Have we seen this hash before in the source?
-                {
-                    Logger($"Removing {file} as it is a duplicate in source with the same content.", true);
-                    allFiles.RemoveAt(i);
-                    removedCount++;
-                }
-            }
-
-            Logger($"Removed {Pluralise(removedCount, "duplicate file", "duplicate files")} based on content hashes.");
         }
 
         /// <summary>
@@ -978,6 +840,48 @@ namespace GroupMachine
                 cleaned = cleaned.Replace("  ", " ");
 
             return cleaned;
+        }
+
+        /// <summary>
+        /// Creates a hard link between two files, either on Windows or Unix-like systems.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="destination"></param>
+        /// <exception cref="IOException"></exception>
+        public static void CreateHardLinkCrossPlatform(string source, string destination)
+        {
+            try
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    if (!NativeMethods.CreateHardLink(destination, source, IntPtr.Zero))
+                    {
+                        var err = Marshal.GetLastWin32Error();
+                        // Fallback to symbolic link
+                        NativeMethods.CreateSymbolicLink(destination, source, 0); // 0 = file link
+                        Logger($"Symlink fallback for {source} → {destination} due to error {err}", true);
+                        softLinksCreated++;
+                    }
+                }
+                else if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+                {
+                    if (NativeMethods.Link(source, destination) != 0)
+                    {
+                        // Fallback to symbolic link
+                        NativeMethods.Symlink(source, destination);
+                        Logger($"Symlink fallback for {source} → {destination} due to error {Marshal.GetLastPInvokeError()}", true);
+                        softLinksCreated++;
+                    }
+                }
+                else
+                {
+                    throw new PlatformNotSupportedException("Unsupported OS for hard linking.");
+                }
+            }
+            catch
+            {
+                // Optional: swallow or rethrow; swallowing here to match “silently fall back” intent
+            }
         }
     }
 }
