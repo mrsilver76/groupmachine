@@ -57,7 +57,7 @@ For example, an album might be named "_Paris, Le Marais, and Versailles_" instea
 
 If you frequently visit the same places, you can avoid album name collisions by appending a date to each name using `-a` or `--append`. For instance, using `--append "MMMM yyyy"` would label your album as "_Paris, Le Marais and Versailles (April 2025)_"
 
-To use this feature, manually decompress a [GeoNames database](https://www.geonames.org/datasources/) `.zip` file and pass the `.txt` file using `-g` (`--geocode`).
+To use this feature, download a GeoNames database file from [here](https://www.geonames.org/export/). You can choose `allCountries.zip` for global data or the `.zip` file for a specific country. A list of supported countries and datasets is available [here](https://www.geonames.org/datasources/). You'll then need to manually decompress the `.zip` file and pass the path and filename of the extracted `.txt` file to the program using `-g` or `--geocode`.
 
 Location selection avoids overly narrow names. GroupMachine prioritises general place names (e.g. _"Paris"_) over exact landmarks (e.g. _"Eiffel Tower"_), giving you cleaner and more useful album names. You can override this by using the `-p` (`--precise`) option to include well-known landmarks.
 
@@ -193,10 +193,10 @@ One of the following file copy modes must be specified:
 ### Album naming
 
 - **`-g <file>`, `--geocode <file>`**   
-  Full path to a [GeoNames database file](https://www.geonames.org/datasources/) in `.txt` format. Providing this file enables automatic renaming of albums based on location data.
+  Full path to a [GeoNames database file](https://www.geonames.org/export/) in `.txt` format. Providing this file enables automatic renaming of albums based on location data. You will need to manually decompress the `.zip` file provided by the GeoNames website before you can use it with GroupMachine.
 
 >[!TIP]
->For optimal speed when using the [GeoNames database file](https://www.geonames.org/datasources/), keep it on a local SSD - loading from a network share, USB drive or HDD can cause significant delays.
+>For best performance, store the [GeoNames database file](https://www.geonames.org/export/) on a local SSD. Loading it from a network share, USB drive, or HDD can be much slower.
 
 - **`-f <format>`, `--format <format>`**   
   Date format used for album folder names that use dates. This follows the [.NET DateTime format syntax](#datetime-format-syntax). The default is `dd MMM yyyy` (e.g., _"20 Jul 2025"_). Used when no GeoNames data is provided or no location can be determined.
