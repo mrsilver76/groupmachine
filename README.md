@@ -21,7 +21,7 @@ naturally reflects your trips, events, or outings without manual sorting.
 - 📏 Uses a configurable distance gap (default: 50 km) to define album boundaries.
 - 🗺️ Supports the GeoNames database to give album folders meaningful place names.
 - 🗓️ Enables appending of extra date text to the end of album names.
-- 🧠 Uses BLAKE3 hashes to detect identical files before renaming.
+- 🧠 Uses SHA hashes to detect identical files before renaming.
 - 🧪 Simulation mode to preview changes without making any modifications.
 - 🧮 Parallel processing speeds up hashing and metadata extraction for large libraries.
 - ✂️ Copies, moves or links files to new album folders.
@@ -284,8 +284,8 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - Changed album title logic: dropped popularity sorting; locations now kept in time order with the least-used removed.
 - Updated `-s` (`--simulate)` to show the destination folder structure.
 - Refactored the _"(part x)"_ numbering logic to ignore existing folders on disk, relying on date suffixes for uniqueness.
-- Switched to BLAKE3 for identical file checks, giving a 12x speed improvement over SHA256.
-- Removed `-u` (`--unique`) check due to poor performance (even with BLAKE3) and limited value.
+- Switched to SHA512 for identical file checks on 64-bit processors, 32-bit processors continue to use SHA256.
+- Removed `-u` (`--unique`) check due to poor performance and limited value.
 - Logger now includes OS details to assist with debugging.
 - Re-ordered command-line arguments and grouped them into logical sections.
 - Cleaned up various pieces of code (analyzer suggestions regarding naming, simplifications, and style)
