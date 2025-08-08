@@ -23,7 +23,7 @@ naturally reflects your trips, events, or outings without manual sorting.
 - 🗓️ Enables appending of extra date text to the end of album names.
 - 🧠 Uses SHA hashes to detect identical files before renaming.
 - 🧪 Simulation mode to preview changes without making any modifications.
-- 🧮 Parallel processing speeds up hashing and metadata extraction for large libraries.
+- 🧮 Parallel processing speeds up hashing, metadata extraction, and file operations for large libraries.
 - ✂️ Copies, moves or links files to new album folders.
 - ⚙️ Automatic fallback to soft links when hard linking is not possible.
 - 📘 Logs all actions, including skipped files, errors, and final summaries.
