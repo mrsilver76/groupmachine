@@ -128,9 +128,9 @@ GroupMachine "d:\Photos" --output "e:\My Album" --recursive --geocode "c:\temp\a
 This example shows how to change the thresholds (to 24 hours and 10 km), the date format of the folder names (to ISO-8601 format) and to skip looking for videos.
 
 ```
-GroupMachine "d:\Photos" -r -o "e:\My Album" -t 24 -d 10 -f "yyyy-MM-dd" -nv
+GroupMachine "d:\Photos" -r -o "e:\My Album" -t 24 -d 10 -f "yyyy-MM-dd" -nv -c
 
-GroupMachine "d:\Photos" --recursive --output "e:\My Album" --time 24 --distance 10 --format "yyyy-MM-dd" --no-videos
+GroupMachine "d:\Photos" --recursive --output "e:\My Album" --time 24 --distance 10 --format "yyyy-MM-dd" --no-videos --copy
 
 ```
 
