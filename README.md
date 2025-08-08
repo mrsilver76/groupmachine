@@ -273,11 +273,11 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ## 🕰️ Version history
 
-### 1.0.0 (xx August 2025)
+### 1.0.0 (08 August 2025)
 
 - 🏁 Declared as the first stable release.
 - Enforced use of `-c` (`--copy`), `-m` (`--move`), or `-l` (`--link`) to specify the copy mode.
-- Added `-l` (`--link`) option for hard linking - this falls back to soft link on failure.
+- Added `-l` (`--link`) option for hard linking, falling back to soft links on failure.
 - Added `-p` (`--precise`) to enable precise location names (e.g. stations, parks, landmarks, etc.) in album titles.
 - Added `-nr` (`--no-range`) to show only the first date in folder names that span multiple days.
 - Added `-np` (`--no-part`) to suppress part number suffixes.
