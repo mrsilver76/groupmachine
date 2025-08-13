@@ -12,6 +12,9 @@ By default, the tool groups your photos and videos into albums - which are simpl
 whenever there’s a noticeable gap in time or distance between your shots (for example, different cities or days apart). This way, the folder structure
 naturally reflects your trips, events, or outings without manual sorting.
 
+>[!TIP]
+>Once you've grouped your photos, [SideBySide](https://github.com/mrsilver76/sidebyside) can combine two portrait shots into a single landscape image, making them ready for digital frames without awkward cropping or black bars.
+
 ## 🧰 Features
 
 - 💻 Runs on Windows 10 & 11, Linux (x64, ARM64, ARM32), and macOS (Intel & Apple Silicon)
