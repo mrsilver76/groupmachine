@@ -22,8 +22,10 @@ naturally reflects your trips, events, or outings without manual sorting.
 - 🧾 Uses photo and video metadata for the most accurate time and location (with fallback to file timestamps)
 - ⏱️ Uses a configurable time gap (default: 48 hours) to define album boundaries.
 - 📏 Uses a configurable distance gap (default: 50 km) to define album boundaries.
+- ⏳ Supports date ranges, can ignore recent photos and can resume from last processed.
 - 🗺️ Supports the GeoNames database to give album folders meaningful place names.
 - 🗓️ Enables appending of extra date text to the end of album names.
+- 🏷️ Enables prefixing of extra text, including dates and creation of folder names.
 - 🧠 Uses SHA hashes to detect identical files before renaming.
 - 🧪 Simulation mode to preview changes without making any modifications.
 - 🧮 Parallel processing speeds up hashing, metadata extraction, and file operations for large libraries.
@@ -145,7 +147,7 @@ GroupMachine "d:\Photos" --recursive --output "e:\My Album" --time 24 --distance
 GroupMachine is a command-line tool. Run it from a terminal or command prompt, supplying all options and arguments directly on the command line. Logs with detailed information are also written and you can find the log file location using `--help` (`-h`).
 
 ```
-GroupMachine [options] -o <destination folder> <source folder> [<source folder> ...]
+GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source folder> ...]
 ```
 
 ### Required
@@ -156,20 +158,19 @@ GroupMachine [options] -o <destination folder> <source folder> [<source folder> 
 - **`<source folder> [<source folder> ...]`**   
   One or more folders containing the photos and videos to be grouped.
 
-#### File copy modes
+- **File copy mode (choose one of the following)**  
+  One of these must be specified:
 
-One of the following file copy modes must be specified:
+  - **`-c`, `--copy`**  
+    Copy files from the source folder to the destination folder.
 
-- **`-c`, `--copy`**   
-  Copy files from the source folder to the destination folder.
+  - **`-m`, `--move`**  
+    Move files from the source folder to the destination folder.
 
-- **`-m`, `--move`**   
-  Move files from the source folder to the destination folder.
+  - **`-l`, `--link`**  
+    Link files from the source folder to the destination folder. This avoids duplicating data by creating a reference to the original file instead of copying it.
 
-- **`-l`, `--link`**   
-  Link files from the source folder to the destination folder. This avoids duplicating data by creating a reference to the original file instead of copying it.
-
-  When used, GroupMachine first attempts to create a [hard link](https://en.wikipedia.org/wiki/Hard_link), which behaves like a real file and doesn’t depend on the original path. If hard linking fails (e.g. across different drives), it falls back to creating a [soft link](https://en.wikipedia.org/wiki/Symbolic_link) (symbolic link), which points to the source file’s path and breaks if that file is moved or deleted.
+    When used, GroupMachine first attempts to create a [hard link](https://en.wikipedia.org/wiki/Hard_link), which behaves like a real file and doesn’t depend on the original path. If hard linking fails (e.g. across different drives), it falls back to creating a [soft link](https://en.wikipedia.org/wiki/Symbolic_link) (symbolic link), which points to the source file’s path and breaks if that file is moved or deleted.
 
 >[!NOTE]
 >Files are never overwritten. If a file with the same name already exists in the destination, it is compared by content. If the files are not binary identical, a number is appended to the new file (e.g., `IMG_1234 (2).jpg`) to preserve both versions.
@@ -179,11 +180,42 @@ One of the following file copy modes must be specified:
 - **`-r`, `--recursive`**  
   Recursively scan all subfolders within the specified source folders.
 
-- **`-nv`, `--no-videos`**  
+- **`-nv`, `--no-video`**  
   Exclude videos (`.mp4`, `.mov`) from scanning.
   
-- **`-np`, `--no-photos`**  
+- **`-np`, `--no-photo`**  
   Exclude photos (`.jpg`, `.jpeg`) from scanning.
+
+- **`-df <date>`, `--date-from <date>`**  
+  Include only files taken after this date. Files *earlier* than this date will be ignored. You must supply the date (and optional time) in ISO 8601 format: `yyyy-mm-dd` or `yyyy-mm-dd hh:mm:ss`. If you don't provide a time then midnight will be assumed.
+
+ >[!TIP]
+ >You can also use the special value `last` to continue processing from the last file processed in a previous run. This is useful
+ >when you are incrementally grouping new photos without reprocessing everything.
+
+- **`-dt <date>`, `--date-to <date>`**  
+  Include only files taken on or before this date. Files *later* than this date will be ignored. You must supply the date (and optional time) in ISO 8601 format: `yyyy-mm-dd` or `yyyy-mm-dd hh:mm:ss`. If you don't provide a time then midnight will be assumed.
+
+ >[!TIP]
+ >You can also use the special value `last` to continue up to the last processed file from a previous run. This is useful when limiting processing to a specific time window or when resuming partial groupings.
+
+- **`-xr` (`--exclude-recent`)**  
+  Exclude very recent files within the `-t` (`--time`) time threshold (default is 48 hours) when 
+  grouping into albums. This holds off processing new content until it’s clear that 
+  no additional photos or videos will be added to the same album.
+
+  For example, imagine you take a series of photos in the evening. If you run 
+  GroupMachine immediately, it might create an album with just the first few photos. 
+  A couple of days later, running GroupMachine again would group the remaining photos 
+  from that evening into a new album, even though they logically belong with the 
+  album created on the previous run - since they were taken within the same `-t` (`--time`) timeframe. Using `-xr` (`--exclude-recent`) delays processing of the 
+  first set of files, ensuring that all photos are correctly grouped together in a 
+  single album once no further related content is expected.
+  
+>[!NOTE]
+>If you specify an end date and time with `-dt` (`--date-to`) that goes beyond the 
+>window required by `-xr` (`--exclude-recent`), the date and time will be adjusted forward to ensure 
+>that very recent files within the `-t` (`--time`) threshold are still ignored.
 
 ### Grouping logic
 
@@ -211,38 +243,68 @@ One of the following file copy modes must be specified:
 
   Only the following types of places are included:
 
-  - **Cultural landmarks:** castles, monuments, palaces, temples, mosques, churches, theatres, opera houses
-  - **Historic and archaeological sites:** ruins, tombs, pyramids, historical or archaeological sites
-  - **Recognisable structures:** towers, arches, caves, lighthouses, piers, quays, squares, gardens
-  - **Public institutions and attractions:** museums, zoos, famous universities, public libraries, stadiums
-  - **Leisure and resort areas:** marinas, resorts, golf courses, spas
-  - **Religious or spiritual locations:** missions, shrines
+  - **Cultural landmarks:** castles, monuments, palaces, temples, mosques, churches, theatres, opera houses.
+  - **Historic and archaeological sites:** ruins, tombs, pyramids, historical or archaeological sites.
+  - **Recognisable structures:** towers, arches, caves, lighthouses, piers, quays, squares, gardens.
+  - **Public institutions and attractions:** museums, zoos, famous universities, public libraries, stadiums.
+  - **Leisure and resort areas:** marinas, resorts, golf courses, spas.
+  - **Religious or spiritual locations:** missions, shrines.
 
   The list is fixed and cannot be changed.
 
 - **`-a <format>`, `--append <format>`**  
-  Date format to append to album folder names that use locations. Useful to distinguish multiple visits to the same location. Also uses the [.NET DateTime format syntax](#datetime-format-syntax).
+  Date format to append to album folder names that use locations. Useful to distinguish multiple visits to the same location. Dates are appended within brackets - e.g. using `MMM yyyy` will produce "_Paris, Le Marais, and Versailles (Apr 2025)_". Dates are defined using the [.NET DateTime format syntax](#datetime-format-syntax).
 
  - **`-nr`, `--no-range`**  
-  Don’t use a date range in album titles. By default, GroupMachine adds a date range (e.g. _"12 June 2025 – 14 June 2025"_, using the format defined by `-f`, `--format`) when an album spans multiple days. With this option enabled, album names always use the date of the first item in the group, even if later items fall on different days.
+  Don't use a date range in album titles. By default, GroupMachine adds a date range (e.g. _"12 Jun 2025 – 14 Jun 2025"_, using the format defined by `-f`, `--format`) when an album spans multiple days. With this option enabled, album names always use the date of the first item in the group, even if later items fall on different days.
 
 - **`-np`, `--no-part`**  
-  Don’t add part numbers to album titles. Normally, if multiple albums form on the same day, date range or in the same location (e.g. due to the distance threshold being exceeded), GroupMachine appends part numbers to distinguish them (e.g. _"Paris (part 2)"_). With this option enabled, part numbers are omitted and such groups are merged into a single album.
+  Don't add part numbers to album titles. Normally, if multiple albums form on the same day, date range or in the same location (e.g. due to the distance threshold being exceeded), GroupMachine appends part numbers to distinguish them (e.g. _"Paris (part 2)"_). With this option enabled, part numbers are omitted and such groups are merged into a single album.
 
 >[!TIP]
 >If you regularly visit the same locations at different times of the year and want to keep those visits separate, consider appending the date, month, or year to album names using the `-a` (`--append`) option.
 
+- **`-pa <text>`, `--prefix-album <text>`**  
+  Adds custom text in front of each album folder name. If the text contains `/` (or `\` on Windows), it is treated as part of the folder path, allowing you to create sub-folders. You can also include `<...>` placeholders using the [.NET DateTime format syntax](#datetime-format-syntax), which will expand based on the album’s date range.
+ 
+#### Examples
+
+|Command|Album date|Without GeoNames|With GeoNames|Notes|
+|-------|----------|----------------|-------------|-----|
+|`-pa "Trip to "`|12 Jan 2025|`Trip to 5 Apr 2025 - 6 Apr 2025`|`Trip to Paris, Le Marais, and Versailles`|Prefix every album.|
+|`-pa "Weekend in"`|12 Jan 2025|`Weekend in5 Apr 2025 - 6 Apr 2025`|`Weekend inParis, Le Marais, and Versailles`|⚠️ **Missing trailing space causes run-on names!**|
+|`-pa "<yyyy>/"`|12 Jan 2025|`2025/5 Apr 2025 - 6 Apr 2025`|`2025/Paris, Le Marais, and Versailles`|Creates a year subfolder.|
+|`-pa "<yyyy>/<MM>_"`|12 Jan 2025|`2025/04_5 Apr 2025 - 6 Apr 2025`|`2025/04_Paris, Le Marais, and Versailles`|As above, but also month prefix on album name.|
+|`-pa "Year <yyyy>/<MMMM>/"`|12 Jan 2025|`Year 2025/April/5 Apr 2025 - 6 Apr 2025`|`Year 2025/April/Paris, Le Marais, and Versailles`|Deeper nesting folders.|
+|`-pa "<yyyy>\<MMM>- "`|12 Jan 2025|`2025\Apr- 5 Apr 2025 - 6 Apr 2025`|`2025\Apr- Paris, Le Marais, and Versailles`|Windows path seperator also supported.|
+|`-pa "<yyyy>"`|12 Jan 2025|`20255 Apr 2025 - 6 Apr 2025`|`2025Paris, Le Marais, and Versailles`|⚠️ **No trailing `/` or `/` means prefix not folder.**|
+
+>[!CAUTION]
+> - If you don’t include a trailing space in your prefix, the album name will run directly after your text.  
+> - If you are creating sub-folders, the prefix must end with `/` (or `\` on Windows) otherwise the text will be added to the folder name instead of making a new folder.
+
+- **`-u`, `--unique`**  
+  Always create new, unique albums. By default (and when using locations), GroupMachine may place photos into an existing folder if the album name matches. This can cause conflicts if you have two albums with the same name taken at different times. Using `-u` (`--unique`) forces a new folder to be created on each run. New folders use the same name with a numeric suffix such as `(1)`, `(2)`, and so on.
+
+  You can also use `-pa` (`--prefix-album`) and/or `-a` (`--append`) to change the album name by adding extra text. Both options can make an album title unique without relying on numeric suffixes.
+
 ### Others
 
+- **`-nc`, `--no-check`**  
+  Disables GitHub version checks for GroupMachine.
+
+>[!NOTE]
+>Version checks occur at most once every 7 days. GroupMachine connects only to [this URL](https://api.github.com/repos/mrsilver76/groupmachine/releases/latest) to retrieve version information. No data about you or your photo/video library is shared with the author or GitHub - you can verify this yourself by reviewing `GitHubVersionChecker.cs`
+
 - **`-s`, `--simulate`**  
-  Runs all processing steps but does not copy or move any files. Ideal for testing and previewing changes.
+  Runs all processing steps but does not copy, move or link any files. Ideal for testing and previewing changes.
   
 - **`/?`. `-h`, `--help`**  
   Displays the full help text with all available options, credits and the location of the log files.
 
 ### DateTime format syntax
 
-The `-f` (`--format`) and `-a` (`--append`) options accept date formats using the .NET DateTime format syntax, allowing you to customize how dates appear in album names. Below is a list of commonly used date formats for your reference:
+The `-f` (`--format`), `-a` (`--append`) and `-pa` (`--prefix-album`) options accept date formats using the .NET DateTime format syntax, allowing you to customize how dates appear. Below is a list of commonly used date formats for your reference:
 
 |Format String|Description|Example Output|
 |-------------|-----------|--------------|
@@ -257,6 +319,31 @@ The `-f` (`--format`) and `-a` (`--append`) options accept date formats using th
 |`dd-MM-yyyy`|Day-month-year with dashes|`20-07-2025`|
 
 For more detailed information, please refer to [this page](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings#:~:text=The%20following%20table%20describes%20the%20custom%20date%20and%20time%20format%20specifiers%20and%20displays%20a%20result%20string%20produced%20by%20each%20format%20specifier.) authored by Microsoft.
+
+## 🔄 Automating downloads and album creation
+
+You can create a workflow that automatically downloads new photos from your cloud service (for example, iCloud or Google Photos) and then groups them into albums using GroupMachine. This allows you to maintain an organized library without manually moving files each time.
+
+Key points for setting up an automated workflow:
+
+- **Automate downloads** – Use a third-party tool to fetch images from your cloud service. For example, [iCloud Photos Downloader](https://github.com/icloud-photos-downloader/icloud_photos_downloader) can download photos and videos from iCloud. There are probably similar tools for Google Photos or other services.
+
+- **Process only new files** – Use `-df last` (`--date-from last`) to tell GroupMachine to only process files added since the last run. This prevents reprocessing older files and ensures incremental grouping.
+
+- **Access the last processed date** – If you need to incorporate further scripting, the last date processed is stored in `settings.ini`. You can locate this file by checking the path displayed when you run `-h` (`--help`), usually in the parent folder to the log files.
+
+- **Avoid premature album creation** – Include `-xr` (`--exclude-recent`) to hold off processing very recent photos. This ensures that files still likely to belong to the same album aren’t split across runs.
+
+- **Organize album names** – Use `-pa` (`--prefix-album`) to place albums into folders (for example, by year) or `-a` (`--append`) to add date elements to the album name (such as year or month). This prevents multiple visits to the same location from merging into a single folder and keeps your albums clear and chronological.
+
+- **Save disk space** – If you plan to keep all downloaded photos, consider using `-l` (`--link`) instead of copy or move. This creates links to the original files without duplicating them.
+
+- **Keep geocode data current** – If you’re using location-based album naming, update your GeoNames database periodically to ensure accurate place names.
+
+>[!TIP]
+> A simple workflow could be a daily or weekly script that downloads new images, then runs GroupMachine with `-df last -xr -pa "<yyyy>/"` to
+> incrementally organize new content into neatly named, chronological albums.
+
 
 ## 🛟 Questions/problems?
 
@@ -276,6 +363,21 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ## 🕰️ Version history
 
+### 1.1.0 (12 September 2025)
+
+- Added `-df` (`--date-from`) and `-dt` (`--date-to`) to define the photo date range.
+- Added support for using `last` with both `-df` and `-dt`, allowing resuming of previous runs.
+- Added `-xr` (`--exclude-recent`) to skip photos that would appear in future albums (using `-t` threshold).
+- Added `-p` (`--prepend`) to prefix folder names; supports date formats and folder creation.
+- Added `-nc` (`--no-check`) to disable GitHub version checking.
+- Files with no location data are counted to highlight potential issues.
+- New header displays all key configuration information.
+- Added `-u` (`--unique`) to prevent existing album folders from being re-used when album names clash.
+- Improved logger performance by keeping files open instead of repeatedly opening/closing.
+- Split utility functions into static classes for clearer structure.
+- Resolved all .NET code analysis warnings to standardize style and tidy the codebase.
+- Added documentation on how GroupMachine can be used in an automated workflow.
+
 ### 1.0.0 (08 August 2025)
 
 - 🏁 Declared as the first stable release.
@@ -285,7 +387,7 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - Added `-nr` (`--no-range`) to show only the first date in folder names that span multiple days.
 - Added `-np` (`--no-part`) to suppress part number suffixes.
 - Changed album title logic: dropped popularity sorting; locations now kept in time order with the least-used removed.
-- Updated `-s` (`--simulate)` to show the destination folder structure.
+- Updated `-s` (`--simulate`) to show the destination folder structure.
 - Refactored the _"(part x)"_ numbering logic to ignore existing folders on disk, relying on date suffixes for uniqueness.
 - Switched to SHA512 for identical file checks on 64-bit processors, 32-bit processors continue to use SHA256.
 - Removed `-u` (`--unique`) check due to poor performance and limited value.

@@ -17,30 +17,51 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
+/// <summary>
+/// Provides platform-specific P/Invoke declarations for creating hard links and symbolic links.
+/// </summary>
+/// <remarks>This class contains methods that directly invoke native APIs for file system operations, such as
+/// creating hard links and symbolic links. The methods are platform-specific and are only available on supported
+/// operating systems.  Use these methods with caution, as they interact with unmanaged code and require appropriate
+/// permissions.</remarks>
 internal static partial class NativeMethods
 {
-    [LibraryImport("kernel32.dll", EntryPoint = "CreateHardLinkW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    [LibraryImport("kernel32.dll", EntryPoint = "CreateHardLinkW",
+        SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
     [SupportedOSPlatform("windows")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    internal static partial bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static partial bool CreateHardLink(
+        string lpFileName,
+        string lpExistingFileName,
+        IntPtr lpSecurityAttributes);
 
-    [LibraryImport("kernel32.dll", EntryPoint = "CreateSymbolicLinkW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    [LibraryImport("kernel32.dll", EntryPoint = "CreateSymbolicLinkW",
+        SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
     [SupportedOSPlatform("windows")]
     [return: MarshalAs(UnmanagedType.U1)]
-    internal static partial bool CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, uint dwFlags);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static partial bool CreateSymbolicLink(
+        string lpSymlinkFileName,
+        string lpTargetFileName,
+        uint dwFlags);
 
-    [LibraryImport("libc", EntryPoint = "link", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
+    [LibraryImport("libc", EntryPoint = "link",
+        SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
     [SupportedOSPlatform("linux")]
     [SupportedOSPlatform("macos")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static partial int Link(string existing, string @new);
 
-    [LibraryImport("libc", EntryPoint = "symlink", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
+    [LibraryImport("libc", EntryPoint = "symlink",
+        SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
     [SupportedOSPlatform("linux")]
     [SupportedOSPlatform("macos")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static partial int Symlink(string target, string linkpath);
 }
+
 
