@@ -172,8 +172,8 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 
     When used, GroupMachine first attempts to create a [hard link](https://en.wikipedia.org/wiki/Hard_link), which behaves like a real file and doesn’t depend on the original path. If hard linking fails (e.g. across different drives), it falls back to creating a [soft link](https://en.wikipedia.org/wiki/Symbolic_link) (symbolic link), which points to the source file’s path and breaks if that file is moved or deleted.
 
-   >[!NOTE]
-   >Files are never overwritten. If a file with the same name already exists in the destination, it is compared by content. If the files are not binary identical, a number is appended to the new file (e.g., `IMG_1234 (2).jpg`) to preserve both versions.
+>[!NOTE]
+>Files are never overwritten. If a file with the same name already exists in the destination, it is compared by content. If the files are not binary identical, a number is appended to the new file (e.g., `IMG_1234 (2).jpg`) to preserve both versions.
 
 ### File selection
 
@@ -212,7 +212,8 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
   first set of files, ensuring that all photos are correctly grouped together in a 
   single album once no further related content is expected.
   
->[!NOTE] If you specify an end date and time with `-dt` (`--date-to`) that goes beyond the 
+>[!NOTE]
+>If you specify an end date and time with `-dt` (`--date-to`) that goes beyond the 
 >window required by `-xr` (`--exclude-recent`), the date and time will be adjusted forward to ensure 
 >that very recent files within the `-t` (`--time`) threshold are still ignored.
 
@@ -329,7 +330,7 @@ Key points for setting up an automated workflow:
 
 - **Process only new files** – Use `-df last` (`--date-from last`) to tell GroupMachine to only process files added since the last run. This prevents reprocessing older files and ensures incremental grouping.
 
-- **Access the last processed date** – If you need to incorporate further scripting, the last date processed is stored in `config.ini`. You can locate this file by checking the path displayed when you run `-h` (`--help`), usually in the parent folder to the log files.
+- **Access the last processed date** – If you need to incorporate further scripting, the last date processed is stored in `settings.ini`. You can locate this file by checking the path displayed when you run `-h` (`--help`), usually in the parent folder to the log files.
 
 - **Avoid premature album creation** – Include `-xr` (`--exclude-recent`) to hold off processing very recent photos. This ensures that files still likely to belong to the same album aren’t split across runs.
 
