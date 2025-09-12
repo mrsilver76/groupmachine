@@ -21,30 +21,51 @@ using NetTopologySuite;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Index.Strtree;
 using System.Globalization;
-using static GroupMachine.Helpers;
 
 namespace GroupMachine
 {
-    public class GeoNamesLookup
+    internal sealed class GeoNamesLookup
     {
         private readonly STRtree<Place> _index = new();  // Spatial index for fast lookups
         private static readonly HashSet<string> AdminFeatureCodes = ["ADM3", "ADM4"];  // Administrative features we care about
         private static readonly GeometryFactory _geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);  // WGS84 coordinate system
 
-        public record Place
+        /// <summary>
+        /// Represents a geographic place with coordinates, population, and feature info.
+        /// </summary>
+        internal sealed record Place
         {
-            public string? Name { get; init; }  // Name of the place (e.g. "Eiffel Tower")
-            public double Latitude { get; init; }  // Latitude in decimal degrees
-            public double Longitude { get; init; }  // Longitude in decimal degrees
-            public string? Admin1 { get; init; }  // Administrative region (e.g. state or province)
-            public string? Country { get; init; }  // Country code (e.g. "FR" for France)
-            public int Population { get; init; }  // Population of the place, if available
-            public string? FeatureClass { get; init; }  // Feature class (e.g. "P" for populated place, "S" for spot feature)
-            public string? FeatureCode { get; init; }  // Feature code (e.g. "S.CSTL" for castle, "P.PPL" for populated place)
-            public NetTopologySuite.Geometries.Point? Location { get; init; }  // Geometric point representation of the place location
+            /// <summary>Name of the place (e.g. "Eiffel Tower")</summary>
+            public string? Name { get; init; }
+
+            /// <summary>Latitude in decimal degrees</summary>
+            public double Latitude { get; init; }
+
+            /// <summary>Longitude in decimal degrees</summary>
+            public double Longitude { get; init; }
+
+            /// <summary>Administrative region (e.g. state or province)</summary>
+            public string? Admin1 { get; init; }
+
+            /// <summary>Country code (e.g. "FR" for France)</summary>
+            public string? Country { get; init; }
+
+            /// <summary>Population of the place, if available</summary>
+            public int Population { get; init; }
+
+            /// <summary>Feature class (e.g. "P" for populated place, "S" for spot feature)</summary>
+            public string? FeatureClass { get; init; }
+
+            /// <summary>Feature code (e.g. "S.CSTL" for castle, "P.PPL" for populated place)</summary>
+            public string? FeatureCode { get; init; }
+
+            /// <summary>Geometric point representation of the place location</summary>
+            public NetTopologySuite.Geometries.Point? Location { get; init; }
         }
 
-        // A set of feature codes that are considered relevant for tourist spots and would typcally be used in the name of an album or photo collection.
+        /// <summary>
+        /// A set of feature codes that are considered relevant for tourist spots and would typcally be used in the name of an album or photo collection.
+        /// </summary>
         private static readonly HashSet<string> AllowedSpotFeatures =
             [
             // Iconic cultural landmarks
@@ -88,14 +109,13 @@ namespace GroupMachine
 	        "S.SHRN",    // shrine
         ];
 
-
         /// <summary>
         /// Loads the GeoNames database from a file.
         /// </summary>
         /// <param name="filePath"></param>
         public void LoadFromFile(string filePath)
         {
-            Logger($"Loading GeoNames database from {filePath}...");
+            Logger.Write($"Loading GeoNames database...");
 
             var places = File.ReadLines(filePath)
                 .AsParallel()
@@ -134,7 +154,7 @@ namespace GroupMachine
                 .Where(p => p != null)
                 .ToList();
 
-            Logger($"Inserting {Pluralise(places.Count, "place", "places")} into spatial index...");
+            Logger.Write($"Inserting {GrammarHelper.Pluralise(places.Count, "place", "places")} into spatial index...");
 
             int skipped = 0;
             foreach (var place in places)
@@ -144,25 +164,25 @@ namespace GroupMachine
                 if (place.Location is null)
                 {
                     skipped++;
-                    Logger($"Skipping place with no location: {place.Name} ({place.FeatureClass}.{place.FeatureCode})", true);
+                    Logger.Write($"Skipping place with no location: {place.Name} ({place.FeatureClass}.{place.FeatureCode})", true);
                     continue;
                 }
  
                 _index.Insert(place.Location.EnvelopeInternal, place);
             }
 
-            Logger("Building spatial index...");
+            Logger.Write("Building spatial index...");
             _index.Build();
 
-            Logger($"Spatial index built (with {Pluralise(skipped, "error", "errors")})");
+            Logger.Write($"Spatial index built (with {GrammarHelper.Pluralise(skipped, "error", "errors")})");
         }
 
         /// <summary>
-        /// Given a feature class and code, determine if it is relevant for our use case. We are primarily interested
-        /// in populated places and administrative regions.
+        /// Given a feature class and code, determine if it is relevant for our use case. We are primarily
+        /// interested in populated places and administrative regions.
         /// </summary>
-        /// <param name="fc"></param>
-        /// <param name="fcode"></param>
+        /// <param name="fc">Feature class</param>
+        /// <param name="fcode">Feature code</param>
         /// <returns></returns>
         /// <remarks>Spot features (that are tourist attractions) is currently disabled as it creates
         /// lots of extremely specific albums (eg. "Eiffel Tower") rather than something a little more
@@ -171,12 +191,11 @@ namespace GroupMachine
             fc switch
             {
                 "P" => true,
-                "S" => Program.usePreciseLocation ? AllowedSpotFeatures.Contains($"{fc}.{fcode}") : false,
+                "S" => Globals.UsePreciseLocation && AllowedSpotFeatures.Contains($"{fc}.{fcode}"),
                 "L" => true,
                 "A" => AdminFeatureCodes.Contains(fcode),
                 _ => false
             };
-
 
         /// <summary>
         /// Given a latitude and longitude, find the nearest place in the GeoNames database.
@@ -185,7 +204,6 @@ namespace GroupMachine
         /// <param name="latitude"></param>
         /// <param name="longitude"></param>
         /// <returns></returns>
-
         public Place? FindNearest(double latitude, double longitude)
         {
             var point = _geometryFactory.CreatePoint(new Coordinate(longitude, latitude));
@@ -216,7 +234,7 @@ namespace GroupMachine
                 return fallback.First().Place;
 
             // If no place found, then give up and return nothing
-            Logger($"No nearby place found for ({latitude}, {longitude}) within 5 km.", true);
+            Logger.Write($"No nearby place found for ({latitude}, {longitude}) within 5 km.", true);
             return null;
         }
 
@@ -239,7 +257,7 @@ namespace GroupMachine
     /// <summary>
     /// Utility class for geographic calculations.
     /// </summary>
-    public static class GeoUtils
+    internal static class GeoUtils
     {
         /// <summary>
         /// Given two latitude/longitude pairs, calculate the Haversine distance between them.
