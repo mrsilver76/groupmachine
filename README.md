@@ -322,7 +322,9 @@ For more detailed information, please refer to [this page](https://learn.microso
 
 ## 🔄 Automating downloads and album creation
 
-You can create a workflow that automatically downloads new photos from your cloud service (for example, iCloud or Google Photos) and then groups them into albums using GroupMachine. This allows you to maintain an organized library without manually moving files each time.
+You can run GroupMachine manually on any folder of photos/videos whenever you like. This is quick, flexible, and works well if you prefer to organise albums on demand.
+
+However, for those who want more automation, you can also create a workflow that automatically downloads new photos from your cloud service (for example, iCloud or Google Photos) and then groups them into albums using GroupMachine. This allows you to maintain an organized library without manually moving files each time.
 
 Key points for setting up an automated workflow:
 
