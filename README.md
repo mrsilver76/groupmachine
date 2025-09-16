@@ -24,7 +24,7 @@ naturally reflects your trips, events, or outings without manual sorting.
 - 📏 Uses a configurable distance gap (default: 50 km) to define album boundaries.
 - ⏳ Supports date ranges, can ignore recent photos and can resume from last processed.
 - 🗺️ Supports the GeoNames database to give album folders meaningful place names.
-- 📍 Fills missing or invalid GPS data by inferring locations from nearby photos and videos taken close in time.
+- 📍 Fills missing or invalid GPS data by inferring locations from nearby photos taken close in time.
 - 🗓️ Enables appending of extra date text to the end of album names.
 - 🏷️ Enables prefixing of extra text, including dates and creation of folder names.
 - 🧠 Uses SHA hashes to detect identical files before renaming.
