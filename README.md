@@ -69,6 +69,8 @@ Location selection avoids overly narrow names. GroupMachine prioritises general 
 >[!TIP]
 >If your photos span multiple countries, consider using the full `allCountries.txt` dataset for best results. It takes longer to load but ensures accurate results across borders.
 
+For photos and videos with missing or invalid GPS data, GroupMachine can infer their location from the nearest photo or video taken close in time (_imputing_). In practice, this means it assumes you were at the same location as the closest previous or next item with valid GPS data. This helps group media without GPS coordinates with other items from the same event or trip, but the inferred location will not reflect actual movement between shots.
+
 ## 📦 Download
 
 Get the latest version from https://github.com/mrsilver76/groupmachine/releases.
@@ -366,6 +368,12 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - GeoNames is a project of Unxos GmbH. This tool is not affiliated with or endorsed by Unxos GmbH.
 
 ## 🕰️ Version history
+
+### 1.2.0 (00 September 2025)
+- Improved grouping by filling missing/invalid GPS data (*imputing*) with locations inferred from photos taken close in time.
+- Fixed a bug where the version checker formatted version numbers using .NET conventions instead of semantic versioning.
+- Moved content sorting by date earlier in the process to support imputing and improve debugging with logs.
+- Tidied up logging and removed superfluous entries.
 
 ### 1.1.0 (12 September 2025)
 
