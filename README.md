@@ -27,7 +27,7 @@ naturally reflects your trips, events, or outings without manual sorting.
 - 📍 Fills missing or invalid GPS data by inferring locations from nearby photos taken close in time.
 - 🗓️ Enables appending of extra date text to the end of album names.
 - 🏷️ Enables prefixing of extra text, including dates and creation of folder names.
-- 🧠 Uses SHA hashes to detect identical files before renaming.
+- 🧠 Uses file hashing to detect identical files before renaming.
 - 🧪 Simulation mode to preview changes without making any modifications.
 - 🧮 Parallel processing speeds up hashing, metadata extraction, and file operations for large libraries.
 - ✂️ Copies, moves or links files to new album folders.
@@ -301,6 +301,12 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 
 - **`-s`, `--simulate`**  
   Runs all processing steps but does not copy, move or link any files. Ideal for testing and previewing changes.
+
+- **`-us`, `--use-sha`**  
+  Use SHA512 hashing instead of MD5 for duplicate file identification. On older 32-bit machines, SHA512 will run significantly slower so SHA256 is used instead.
+
+  MD5 is the default because it is fast and more than accurate enough for typical image and video libraries. The chance of two different files producing the same MD5 hash is vanishingly small, and if it ever occurs the second file will simply be saved with a numbered name. SHA-256/512 provides stronger guarantees but is _noticeably slower_, so this option should only be enabled if you specifically need cryptographic-grade duplicate detection.
+
   
 - **`/?`. `-h`, `--help`**  
   Displays the full help text with all available options, credits and the location of the log files.
@@ -375,6 +381,9 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - Fixed a bug where the version checker formatted version numbers using .NET conventions instead of semantic versioning.
 - Moved content sorting by date earlier in the process to support imputing and improve debugging with logs.
 - Tidied up logging and removed superfluous entries.
+- Default hashing switched to MD5 for faster performance; accidental collisions in typical libraries remain vanishingly rare.
+- Added `-us` (`--use-sha`) to enable SHA-256/512 for cryptographic-grade duplicate detection.
+- Capped parallel threads for hashing and linking to prevent `SEHException` crashes on NAS and network drives.
 
 ### 1.1.0 (12 September 2025)
 
