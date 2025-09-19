@@ -305,9 +305,8 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 - **`-us`, `--use-sha`**  
   Use SHA512 hashing instead of MD5 for duplicate file identification. On older 32-bit machines, SHA512 will run significantly slower so SHA256 is used instead.
 
-  MD5 is the default because it is fast and more than accurate enough for typical image and video libraries. The chance of two different files producing the same MD5 hash is vanishingly small, and if it ever occurs the second file will simply be saved with a numbered name. SHA-256/512 provides stronger guarantees but is _noticeably slower_, so this option should only be enabled if you specifically need cryptographic-grade duplicate detection.
+  MD5 is the default because it is fast and more than accurate enough for typical image and video libraries. The chance of two different files producing the same MD5 hash is vanishingly small, and if it ever occurs the second file will simply be suffixed with a number (e.g. `IMG_1234 (2).jpg`) for manual review. SHA-256/512 provides stronger guarantees but is _noticeably slower_, so this option should only be enabled if you specifically need cryptographic-grade duplicate detection.
 
-  
 - **`/?`. `-h`, `--help`**  
   Displays the full help text with all available options, credits and the location of the log files.
 
@@ -378,12 +377,12 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ### 1.2.0 (00 September 2025)
 - Improved grouping by filling missing/invalid GPS data (*imputing*) with locations inferred from photos taken close in time.
-- Fixed a bug where the version checker formatted version numbers using .NET conventions instead of semantic versioning.
 - Moved content sorting by date earlier in the process to support imputing and improve debugging with logs.
-- Tidied up logging and removed superfluous entries.
+- Capped parallel threads for hashing and linking to prevent `SEHException` crashes seen when accessing content stored on network drives.
 - Default hashing switched to MD5 for faster performance; accidental collisions in typical libraries remain vanishingly rare.
 - Added `-us` (`--use-sha`) to enable SHA-256/512 for cryptographic-grade duplicate detection.
-- Capped parallel threads for hashing and linking to prevent `SEHException` crashes on NAS and network drives.
+- Tidied up logging and removed superfluous entries.
+- Fixed a bug where the version checker formatted version numbers using .NET conventions instead of semantic versioning.
 
 ### 1.1.0 (12 September 2025)
 
