@@ -307,6 +307,9 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 
   MD5 is the default because it is fast and more than accurate enough for typical image and video libraries. The chance of two different files producing the same MD5 hash is vanishingly small, and if it ever occurs the second file will simply be suffixed with a number (e.g. `IMG_1234 (2).jpg`) for manual review. SHA-256/512 provides stronger guarantees but is _noticeably slower_, so this option should only be enabled if you specifically need cryptographic-grade duplicate detection.
 
+- **`-mp <number>`**, **`--max-parallel <number>`**  
+   Controls how many files are processed at the same time during copying, moving, or linking. By default, GroupMachine will attempt to process multiple files in parallel. For local storage, this usually means up to one task per CPU core. If you experience crashes or stability issues (common with network drives), try reducing the number of parallel tasks. Use `-h` (`--help`) to see the default value for your system.
+
 - **`/?`. `-h`, `--help`**  
   Displays the full help text with all available options, credits and the location of the log files.
 
@@ -378,7 +381,7 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 ### 1.2.0 (00 September 2025)
 - Improved grouping by filling missing/invalid GPS data (*imputing*) with locations inferred from photos taken close in time.
 - Moved content sorting by date earlier in the process to support imputing and improve debugging with logs.
-- Capped parallel threads for hashing and linking to prevent `SEHException` crashes seen when accessing content stored on network drives.
+- Added `-mp` (`--max-parallel`) to avoid `SEHException` crashes seen when hashing and linking content stored on a network drive.
 - Default hashing switched to MD5 for faster performance; accidental collisions in typical libraries remain vanishingly rare.
 - Added `-us` (`--use-sha`) to enable SHA-256/512 for cryptographic-grade duplicate detection.
 - Tidied up logging and removed superfluous entries.
