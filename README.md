@@ -385,6 +385,7 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - Added `-mp` (`--max-parallel`) option to allow users to override the default number of parallel copy, move, or link operations.
 - Default hashing switched to MD5 for faster performance; accidental collisions in typical libraries remain vanishingly rare.
 - Added `-us` (`--use-sha`) to enable SHA-256/512 for cryptographic-grade duplicate detection.
+- Fixed a bug where the last processed timestamp would be incorrectly updated to an earlier date.
 - Tidied up logging and removed superfluous entries.
 - Fixed a bug where the version checker formatted version numbers using .NET conventions instead of semantic versioning.
 - Updated publishing powershell script to avoid hanging after first build has been completed. 
