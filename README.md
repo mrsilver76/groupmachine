@@ -302,10 +302,11 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 - **`-s`, `--simulate`**  
   Runs all processing steps but does not copy, move or link any files. Ideal for testing and previewing changes.
 
-- **`-us`, `--use-sha`**  
-  Use SHA512 hashing instead of MD5 for duplicate file identification. On older 32-bit machines, SHA512 will run significantly slower so SHA256 is used instead.
+- **`-ha <type>`, `--hash-algo <type>`**  
+  Select the hashing algorithm for duplicate detection. By default, GroupMachine uses CRC64-ECMA-FAST, a very fast 64-bit checksum that reads only the first 64 KiB of each file. This is extremely efficient for spotting duplicates in large collections. You can override this with:
 
-  MD5 is the default because it is fast and more than accurate enough for typical image and video libraries. The chance of two different files producing the same MD5 hash is vanishingly small, and if it ever occurs the second file will simply be suffixed with a number (e.g. `IMG_1234 (2).jpg`) for manual review. SHA-256/512 provides stronger guarantees but is _noticeably slower_, so this option should only be enabled if you specifically need cryptographic-grade duplicate detection.
+  -  `md5` - Well-known and widely supported. Reads the entire file, so it is slower than CRC64-ECMA-FAST, but more accurate for full-file deduplication.
+  -  `sha` - Strong cryptographic hash. Slowest option, but provides maximum certainty when comparing full files. GroupMachine automatically chooses SHA256 on 32-bit systems and SHA512 on 64-bit systems.
 
 - **`-mp <number>`**, **`--max-parallel <number>`**  
    Controls how many files are processed at the same time during copying, moving, or linking. By default, GroupMachine automatically chooses a safe number of parallel tasks based on your CPU and storage type. If you experience crashes, performance or stability issues, try reducing the number of parallel tasks. Use `-h` (`--help`) to see the default value for your system.
@@ -383,8 +384,9 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - Moved content sorting by date earlier in the process to support imputing and improve debugging with logs.
 - Added automatic detection of a safe number of parallel tasks based on CPU and storage type to prevent `SEHException` crashes on network drives.
 - Added `-mp` (`--max-parallel`) option to allow users to override the default number of parallel copy, move, or link operations.
-- Default hashing switched to MD5 for faster performance; accidental collisions in typical libraries remain vanishingly rare.
-- Added `-us` (`--use-sha`) to enable SHA-256/512 for cryptographic-grade duplicate detection.
+- Default hashing switched to CRC64-ECMA-FAST (64 KiB prefix) for much faster performance; accidental collisions in typical file collections remain extremely rare.
+- Added `-ha` (`--hash-algo`) to allow users to override the hashing algorithm with MD5 or SHA (SHA256 on 32-bit systems, SHA512 on 64-bit systems).
+- Added file size comparison before hashing to further improve duplicate-checking speed.
 - Fixed a bug where the last processed timestamp would be incorrectly updated to an earlier date.
 - Tidied up logging and removed superfluous entries.
 - Fixed a bug where the version checker formatted version numbers using .NET conventions instead of semantic versioning.
