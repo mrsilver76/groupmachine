@@ -1,7 +1,6 @@
 ﻿/*
- * GroupMachine - Groups photos and videos into albums (folders) based on time & location changes.
- * Copyright (c) 2025 Richard Lawrence
- * http://github.com/mrsilver76/groupmachine/
+ * GitHubVersionChecker.cs
+ * Version 1.0.2
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +15,38 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
+/*
+ * Usage:
+ * -------
+ * This class provides a simple way to check GitHub for the latest release of your application
+ * and determine whether an update is available.
+ *
+ * 1. Add a reference to IniParser (NuGet: IniParser) to handle caching in an INI file.
+ *
+ * 2. Call `GitHubVersionChecker.CheckLatestRelease` from your code:
+ *
+ *      var currentVersion = new Version(1, 0, 2, 0);  // Your app's current version
+ *      var repo = "owner/repo";                       // GitHub repository in "owner/repo" format
+ *      var iniPath = "path/to/cache.ini";             // File path to store cached version info
+ *
+ *      var result = GitHubVersionChecker.CheckLatestRelease(currentVersion, repo, iniPath);
+ *
+ * 3. The returned `VersionCheckResult` contains:
+ *      - UpdateAvailable (bool): true if a newer release exists
+ *      - LatestVersion (Version?): the latest version found, null if unavailable
+ *
+ * 4. The method automatically caches the last check in the provided INI file to avoid
+ *    unnecessary network calls. It will re-check GitHub if more than 7 days have passed.
+ *
+ * Notes:
+ * -------
+ * - The version string in GitHub releases should follow "major.minor.revision" (e.g., "1.0.2").
+ * - The check respects semantic versioning but converts the revision to the fourth segment
+ *   of System.Version (major.minor.0.revision) for comparison.
+ * - The HTTP request uses a simple User-Agent header derived from the repository and current
+ *   version. Without one, GitHub will reject the request.
+ */
 
 using IniParser;
 using IniParser.Model;
@@ -40,9 +71,7 @@ namespace GroupMachine
     /// </summary>
     internal readonly record struct VersionCheckResult(
         bool UpdateAvailable,  // Indicates if a newer version is available
-        Version CurrentVersion,  // The currently running version of the application
-        Version? LatestVersion,  // The latest version available, or null if not found
-        string Repo  // The GitHub repository in the form "owner/repo"
+        Version? LatestVersion  // The latest version available, or null if not found
     );
 
     /// <summary>
@@ -62,7 +91,7 @@ namespace GroupMachine
         /// <param name="gitHubRepo">The GitHub repository to check for the latest release, specified in the format "owner/repo".</param>
         /// <param name="iniPath">The file path to the INI configuration file used to cache version check data.</param>
         /// <returns>A <see cref="VersionCheckResult"/> object containing information about whether an update is available, the
-        /// current version, the latest version (if available), and the GitHub repository checked.</returns>
+        /// current version and the latest version (if available)</returns>
         public static VersionCheckResult CheckLatestRelease(Version currentVersion, string gitHubRepo, string iniPath)
         {
             var parser = new FileIniDataParser();
@@ -87,7 +116,7 @@ namespace GroupMachine
 
             bool updateAvailable = cachedVersion != null && cachedVersion > currentVersion;
 
-            return new VersionCheckResult(updateAvailable, currentVersion, cachedVersion, gitHubRepo);
+            return new VersionCheckResult(updateAvailable, cachedVersion);
         }
 
         /// <summary>

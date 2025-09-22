@@ -78,6 +78,19 @@ namespace GroupMachine
             HardSoftLink
         }
 
+        /// <summary>
+        /// Defines the hashing algorithm used for duplicate detection.
+        /// </summary>
+        internal enum HashMode
+        {
+            /// <summary>Use CRC64, which is fast but less reliable for duplicate detection.</summary>
+            CRC,
+            /// <summary>Use MD5, which is a good balance of speed and reliability for duplicate detection.</summary>
+            MD5,
+            /// <summary>Use SHA256 (32-bit) or SHA512 (64-bit), which offers cryptographic strength but is slower.</summary>
+            SHA
+        }
+
         #region User defined settings
         /// <summary>List of source folders to scan for media.</summary>
         public static List<string> SourceFolders { get; set; } = [];
@@ -141,6 +154,13 @@ namespace GroupMachine
 
         /// <summary>If true, albums will not be assigned a name that conflicts with a folder that already exists</summary>
         public static bool AvoidExistingFolders { get; set; }
+
+        /// <summary> Maximum number of parallel tasks to use when processing files. Set to 1 for single-threaded operation
+        /// and 0 to allow the system to decide.</summary>
+        public static int MaxParallel { get; set; } = -2;  // Use -2 as default to indicate "not set by user" 
+
+        /// <summary>Type of hashing algorithm to use for duplicate detection.</summary>
+        public static HashMode DuplicateCheckMode { get; set; } = HashMode.CRC;
 
         #endregion
 

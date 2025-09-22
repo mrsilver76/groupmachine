@@ -40,6 +40,8 @@ namespace GroupMachine
 
             // Initialize logging and parse command line arguments
             Logger.Initialise(Path.Combine(Globals.AppDataPath, "Logs"));
+            Logger.Write("GroupMachine started.", true);
+
             CommandLineParser.ParseArguments(args);
 
             // Display a header with some setting information
@@ -63,6 +65,9 @@ namespace GroupMachine
 
             // Start processing photo and vides
             MediaScanner.ScanFolders();
+
+            // Impute missing/invalid location data
+            MediaMetadataExtractor.ImputateMissingLocationData();
 
             // Build the albums based on the scanned media
             AlbumManager.BuildAlbums();

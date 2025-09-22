@@ -211,5 +211,123 @@ namespace GroupMachine
 
             return albumName;
         }
+
+        /// <summary>
+        /// Iterates through Globals.ImageMetadataList and imputes missing or invalid GPS data
+        /// for items where Latitude and Longitude are zero. Each missing location is filled
+        /// from the nearest previous or next item with valid GPS within the time threshold
+        /// defined by Globals.TimeThreshold. Items without a nearby anchor remain at (0,0).
+        /// </summary>
+        public static void ImputateMissingLocationData()
+        {
+            if (Globals.DistanceThreshold == 0)
+                return;  // Distance threshold is zero, so skip imputation
+
+            // Count items with missing/invalid GPS
+            int count = Globals.ImageMetadataList.Count(x => x.Latitude == 0 && x.Longitude == 0);
+            if (count == 0)
+                return;  // No missing/invalid GPS data, nothing to do
+
+            Logger.Write($"Imputating missing/invalid GPS data for {GrammarHelper.Pluralise(count, "file", "files")}...");
+
+            TimeSpan threshold = TimeSpan.FromHours(Globals.TimeThreshold);
+
+            for (int i = 0; i < Globals.ImageMetadataList.Count; i++)
+            {
+                var curr = Globals.ImageMetadataList[i];
+
+                // Skip if GPS already present
+                if (curr.Latitude != 0 || curr.Longitude != 0)
+                    continue;
+
+                // Find previous anchor within threshold
+                Globals.ImageMetadata? prevAnchor = null;
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    var candidate = Globals.ImageMetadataList[j];
+                    if ((candidate.Latitude != 0 || candidate.Longitude != 0) &&
+                        (curr.DateCreated - candidate.DateCreated) <= threshold)
+                    {
+                        prevAnchor = candidate;
+                        break;
+                    }
+                }
+
+                // Find next anchor within threshold
+                Globals.ImageMetadata? nextAnchor = null;
+                for (int j = i + 1; j < Globals.ImageMetadataList.Count; j++)
+                {
+                    var candidate = Globals.ImageMetadataList[j];
+                    if ((candidate.Latitude != 0 || candidate.Longitude != 0) &&
+                        (candidate.DateCreated - curr.DateCreated) <= threshold)
+                    {
+                        nextAnchor = candidate;
+                        break;
+                    }
+                }
+
+                // No anchor within threshold, so skip imputation
+                if (prevAnchor == null && nextAnchor == null)
+                    continue;
+
+                // Now lets pick the closest anchor
+                Globals.ImageMetadata? chosenAnchor;
+                Globals.ImageMetadata? rejectedAnchor = null;
+                TimeSpan timeGap = TimeSpan.Zero;
+
+                // If we have both anchors, pick the closest one
+                if (prevAnchor != null && nextAnchor != null)
+                {
+                    var prevDiff = (curr.DateCreated - prevAnchor.DateCreated).Duration();
+                    var nextDiff = (nextAnchor.DateCreated - curr.DateCreated).Duration();
+
+                    if (prevDiff <= nextDiff)
+                    {
+                        chosenAnchor = prevAnchor;
+                        rejectedAnchor = nextAnchor;
+                        timeGap = prevDiff;
+                    }
+                    else
+                    {
+                        chosenAnchor = nextAnchor;
+                        rejectedAnchor = prevAnchor;
+                        timeGap = nextDiff;
+                    }
+                }
+                else if (prevAnchor != null)  // Only previous anchor available
+                {
+                    chosenAnchor = prevAnchor;
+                    timeGap = (curr.DateCreated - prevAnchor.DateCreated).Duration();
+                }
+                else if (nextAnchor != null)  // Only next anchor available
+                {
+                    chosenAnchor = nextAnchor;
+                    timeGap = (nextAnchor.DateCreated - curr.DateCreated).Duration();
+                }
+                else  // Neither previous nor next anchor available, should never happen due to earlier check
+                {
+                    // This is to satisfy the compiler
+                    continue;
+                }
+
+                // Copy location data
+                curr.Latitude = chosenAnchor.Latitude;
+                curr.Longitude = chosenAnchor.Longitude;
+                curr.LocationName = chosenAnchor.LocationName;
+
+                // Build log message with hh:mm:ss format
+                string logMsg = $"Imputed location for {Path.GetFileName(curr.FileName)}: " +
+                                $"Lat={curr.Latitude:F6}, Long={curr.Longitude:F6}, Name={curr.LocationName}, " +
+                                $"from {Path.GetFileName(chosenAnchor.FileName)} ({timeGap:hh\\:mm\\:ss})";
+
+                if (rejectedAnchor != null)
+                {
+                    var rejectedGap = (curr.DateCreated - rejectedAnchor.DateCreated).Duration();
+                    logMsg += $", rejected {Path.GetFileName(rejectedAnchor.FileName)}: Name={rejectedAnchor.LocationName} ({rejectedGap:hh\\:mm\\:ss})";
+                }
+
+                Logger.Write(logMsg, true);
+            }
+        }
     }
 }

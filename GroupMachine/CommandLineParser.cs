@@ -18,10 +18,12 @@
 */
 
 using System.Globalization;
-using System.Runtime.CompilerServices;
 
 namespace GroupMachine
 {
+    /// <summary>
+    /// Handles parsing of command line arguments.
+    /// </summary>
     internal sealed class CommandLineParser
     {
         public static List<string> ParsedFlags = [];
@@ -161,6 +163,20 @@ namespace GroupMachine
                     Globals.AvoidExistingFolders = true;
                     ParsedFlags.Add("Unique");
                 }
+                else if (arg == "-mp" || arg == "--max-parallel" && i + 1 < args.Length)
+                {
+                    if (int.TryParse(args[i + 1], out int procs))
+                    {
+                        Globals.MaxParallel = procs;
+                        i++; // Skip next argument
+                        ParsedFlags.Add($"Max-parallel={procs}");
+                    }
+                }
+                else if (arg == "-ha" || arg == "--hash" || arg =="--hash-algo" || arg == "--hash-algorithm")
+                {
+                    Globals.DuplicateCheckMode = Hashing.TryParseHashMode(args[i+1]);
+                    i++; // Skip next argument
+                }
                 else if (arg.StartsWith('-'))
                     ConsoleOutput.ShowUsage($"Unrecognized option '{arg}'.");
 
@@ -256,6 +272,25 @@ namespace GroupMachine
             if (!String.IsNullOrEmpty(Globals.AlbumPrefix))
                 DateHelper.ValidateTemplate(Globals.AlbumPrefix, DateTime.Now);
 
+            // Auto-detect the optimal number of parallel tasks if not specified by the user
+            if (Globals.MaxParallel == -2)
+            {
+                bool isLocal = IsLocalDrive(Globals.DestinationFolder);
+                Globals.MaxParallel = CalculateTasks(isLocal);
+                Logger.Write($"Destination folder is {(isLocal ? "local" : "network")} drive = {Globals.MaxParallel} parallel tasks.", true);
+            }
+            else if (Globals.MaxParallel < 1)
+            {
+                Logger.Write("Invalid value for max parallel tasks. Using all available processors.", true);
+                Globals.MaxParallel = -1;
+            }
+            else
+            {
+                Logger.Write($"Using user-specified {Globals.MaxParallel} parallel tasks.", true);
+            }
+
+            // Calculate the optimal number of parallel tasks if not specified by the user
+
             // If the user has asked to exclude recently created files, then we need to adjust
             // the date range accordingly. If no date range is specified, we set the 'to' date
             // to the recent threshold. If a date range is specified, we adjust the 'to' date
@@ -271,6 +306,9 @@ namespace GroupMachine
                 }
             }
         }
+
+        // Some functions which aren't technically command line parsing, but are used by
+        // this class to prepare for processing.
 
         /// <summary>
         /// Creates the destination folder if it doesn't exist.
@@ -288,6 +326,54 @@ namespace GroupMachine
                 {
                     ConsoleOutput.ShowUsage($"Could not create destination folder '{Globals.DestinationFolder}': {ex.Message}");
                 }
+            }
+        }
+
+        /// <summary>
+        /// Determines if the specified path is on a local drive (not a network drive).
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static bool IsLocalDrive(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                throw new ArgumentNullException(nameof(path));
+
+            try
+            {
+                string root = Path.GetPathRoot(path) ?? throw new InvalidOperationException();
+                var driveInfo = new DriveInfo(root);
+
+                return driveInfo.DriveType != DriveType.Network;
+            }
+            catch
+            {
+                // Fallback: treat as network if we can't determine
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Calculates the optimal number of parallel tasks based on whether the path is local or network and
+        /// the number of CPU cores.
+        /// </summary>
+        /// <param name="isLocal"></param>
+        /// <returns></returns>
+        public static int CalculateTasks(bool isLocal)
+        {
+            int logicalCores = Environment.ProcessorCount;
+            int physicalCores = Math.Max(1, logicalCores / 2); // approximate for hyper-threaded CPUs
+
+            if (isLocal)
+            {
+                // Local: allow all logical cores
+                return logicalCores;
+            }
+            else
+            {
+                // Network/slow I/O: limit to physical cores to avoid crashes
+                return physicalCores;
             }
         }
     }

@@ -74,11 +74,12 @@ namespace GroupMachine
                 Environment.Exit(0);
             }
 
+            // Now we have the list of files, extract metadata from each one in parallel
+
             Logger.Write($"Extracting metadata from {GrammarHelper.Pluralise(allFiles.Count, "file", "files")}...");
 
             var concurrentList = new ConcurrentBag<Globals.ImageMetadata>();
-            int filesWithoutLocation = 0;
-
+           
             Parallel.ForEach(allFiles, filePath =>
             {
                 try
@@ -97,10 +98,6 @@ namespace GroupMachine
                     MediaMetadataExtractor.ExtractLocation(directories, metadata);
                     MediaMetadataExtractor.EnrichLocation(metadata);
 
-                    // Count files without location data for reporting later
-                    if (metadata.Latitude == 0 && metadata.Longitude == 0)
-                        Interlocked.Increment(ref filesWithoutLocation);
-
                     Logger.Write($"Metadata from {Path.GetFileName(filePath)}: Date={metadata.DateCreated}, Location=({metadata.Latitude}, {metadata.Longitude}), Name={metadata.LocationName}", true);
                     concurrentList.Add(metadata);
                 }
@@ -110,14 +107,16 @@ namespace GroupMachine
                 }
             });
 
+            // Copy the concurrent list to a normal list for further processing
             Globals.ImageMetadataList = [.. concurrentList];
 
+            // Sort the list by date taken. This can be done later on, but it's easier to
+            // understand what is going on in the logs if done now.
+            Globals.ImageMetadataList.Sort((x, y) => x.DateCreated.CompareTo(y.DateCreated));
+
+            // Report how many files were found during the scan
             if (Globals.ImageMetadataList.Count > 0)
-            {
                 Logger.Write($"Found {GrammarHelper.Pluralise(Globals.ImageMetadataList.Count, "media file", "media files")} to process.");
-                if (filesWithoutLocation > 0)
-                    Logger.Write($"Warning: {GrammarHelper.Pluralise(filesWithoutLocation, "file", "files")} have missing or invalid location data.");
-            }
             else
             {
                 Logger.Write($"No {Globals.MediaLabel} found matching the specified criteria. Finishing.");

@@ -24,6 +24,9 @@ using System.Globalization;
 
 namespace GroupMachine
 {
+    /// <summary>
+    /// GeoNamesLookup provides functionality to load and query the GeoNames database for geographic places.
+    /// </summary>
     internal sealed class GeoNamesLookup
     {
         private readonly STRtree<Place> _index = new();  // Spatial index for fast lookups
@@ -174,7 +177,8 @@ namespace GroupMachine
             Logger.Write("Building spatial index...");
             _index.Build();
 
-            Logger.Write($"Spatial index built (with {GrammarHelper.Pluralise(skipped, "error", "errors")})");
+            if (skipped > 0)
+                Logger.Write($"Spatial index built - {GrammarHelper.Pluralise(skipped, "invalid entry", "invalid entries")} skipped (non-fatal)");
         }
 
         /// <summary>
