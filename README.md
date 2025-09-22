@@ -379,13 +379,13 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ## 🕰️ Version history
 
-### 1.2.0 (00 September 2025)
+### 1.2.0 (xx September 2025)
 - Improved grouping by filling missing/invalid GPS data (*imputing*) with locations inferred from photos taken close in time.
 - Moved content sorting by date earlier in the process to support imputing and improve debugging with logs.
 - Added automatic detection of a safe number of parallel tasks based on CPU and storage type to prevent `SEHException` crashes on network drives.
 - Added `-mp` (`--max-parallel`) option to allow users to override the default number of parallel copy, move, or link operations.
-- Default hashing switched to CRC64-ECMA-FAST (64 KiB prefix) for much faster performance; accidental collisions in typical file collections remain extremely rare.
-- Added `-ha` (`--hash-algo`) to allow users to override the hashing algorithm with MD5 or SHA (SHA256 on 32-bit systems, SHA512 on 64-bit systems).
+- Default hashing switched to CRC64-ECMA-FAST (64 KiB prefix) for much faster performance; accidental collisions remain rare.
+- Added `-ha` (`--hash-algo`) to override the hashing algorithm with MD5 or SHA512 (SHA256 on 32-bit systems).
 - Added file size comparison before hashing to further improve duplicate-checking speed.
 - Fixed a bug where the last processed timestamp would be incorrectly updated to an earlier date.
 - Tidied up logging and removed superfluous entries.
