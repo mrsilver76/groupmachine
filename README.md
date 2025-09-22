@@ -379,7 +379,7 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ## 🕰️ Version history
 
-### 1.2.0 (xx September 2025)
+### 1.2.0 (22 September 2025)
 - Improved grouping by filling missing/invalid GPS data (*imputing*) with locations inferred from photos taken close in time.
 - Moved content sorting by date earlier in the process to support imputing and improve debugging with logs.
 - Added automatic detection of a safe number of parallel tasks based on CPU and storage type to prevent `SEHException` crashes on network drives.
