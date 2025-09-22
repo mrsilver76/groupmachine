@@ -167,8 +167,6 @@ foreach ($arch in $architectures) {
     # Clean publish folder
     Clear-Folder -folderPath $publishFolder
 
-    Write-Host "Running: dotnet publish $csproj.FullName -r $arch ..."
-
 	& dotnet publish $csproj.FullName `
 		-c Release `
 		-r $arch `
