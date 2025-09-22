@@ -21,29 +21,30 @@ using System.Globalization;
 
 namespace GroupMachine
 {
+    /// <summary>
+    /// Handles building albums from media metadata based on time and location thresholds.
+    /// </summary>
     internal sealed class AlbumManager
     {
-		/// <summary>
-		/// Builds albums from the media metadata list by sorting the media, assigning album IDs,
-		/// assigning base album names, and applying part numbers if required.
-		/// </summary>
-		public static void BuildAlbums()
+        /// <summary>
+        /// Builds albums from the media metadata list by sorting the media, assigning album IDs,
+        /// assigning base album names, and applying part numbers if required.
+        /// </summary>
+        public static void BuildAlbums()
         {
-            // We need to sort the media by date first
-            SortMediaByDate();
-            // Next, assign album IDs based on the time and distance thresholds
+            // Assign album IDs based on the time and distance thresholds
             AssignAlbumIDs();
             // Now we can group the items by album ID and assign base album names
             AssignBaseAlbumNames();
             // Finally, if required, assign part numbers and apply them to the album names
             AssignAndApplyPartNumbers();
-		}
+        }
 
-		/// <summary>
-		/// Assign a unique album ID to each media item. The album ID is incremented when the time or
+        /// <summary>
+        /// Assign a unique album ID to each media item. The album ID is incremented when the time or
         /// distance threshold is exceeded between consecutive items.
-		/// </summary>
-		private static void AssignAlbumIDs()
+        /// </summary>
+        private static void AssignAlbumIDs()
         {
             Logger.Write($"Allocating {Globals.MediaLabel} to albums...");
 
@@ -212,15 +213,6 @@ namespace GroupMachine
             foreach (var img in Globals.ImageMetadataList)
                 if (img.Part >= 2)
                     img.AlbumName += $" (part {img.Part})";
-        }
-
-        /// <summary>
-        /// Sorts the media by the date the photo or video was taken or created.
-        /// </summary>
-        private static void SortMediaByDate()
-        {
-            Logger.Write($"Sorting {Globals.MediaLabel} by date taken...");
-            Globals.ImageMetadataList.Sort((x, y) => x.DateCreated.CompareTo(y.DateCreated));
         }
     }
 }

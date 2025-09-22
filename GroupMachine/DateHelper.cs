@@ -22,6 +22,9 @@ using System.Text.RegularExpressions;
 
 namespace GroupMachine
 {
+    /// <summary>
+    /// Provides date parsing and template application functionality.
+    /// </summary>
     internal sealed class DateHelper
     {
         static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
@@ -146,8 +149,6 @@ namespace GroupMachine
                 if (ReservedNames.Contains(expanded))
                     ConsoleOutput.ShowUsage($"Template segment '{segment}' expands to reserved name '{expanded}'.");
             }
-
-            Logger.Write($"Template '{template}' validated.", true);
         }
 
         /// <summary>
@@ -173,7 +174,6 @@ namespace GroupMachine
             Logger.Write($"Applied '{template}' with {date:yyyy-MM-dd} and folder '{folderName}' -> '{output}'", true);
             return output;
         }
-
 
         /// <summary>
         /// Given a template string, splits it into segments based on path separators.

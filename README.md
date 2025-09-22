@@ -24,9 +24,10 @@ naturally reflects your trips, events, or outings without manual sorting.
 - 📏 Uses a configurable distance gap (default: 50 km) to define album boundaries.
 - ⏳ Supports date ranges, can ignore recent photos and can resume from last processed.
 - 🗺️ Supports the GeoNames database to give album folders meaningful place names.
+- 📍 Fills missing or invalid GPS data by inferring locations from nearby photos taken close in time.
 - 🗓️ Enables appending of extra date text to the end of album names.
 - 🏷️ Enables prefixing of extra text, including dates and creation of folder names.
-- 🧠 Uses SHA hashes to detect identical files before renaming.
+- 🧠 Uses file hashing to detect identical files before renaming.
 - 🧪 Simulation mode to preview changes without making any modifications.
 - 🧮 Parallel processing speeds up hashing, metadata extraction, and file operations for large libraries.
 - ✂️ Copies, moves or links files to new album folders.
@@ -68,6 +69,8 @@ Location selection avoids overly narrow names. GroupMachine prioritises general 
 
 >[!TIP]
 >If your photos span multiple countries, consider using the full `allCountries.txt` dataset for best results. It takes longer to load but ensures accurate results across borders.
+
+For photos and videos with missing or invalid GPS data, GroupMachine can infer their location from the nearest photo or video taken close in time (_imputing_). In practice, this means it assumes you were at the same location as the closest previous or next item with valid GPS data. This helps group media without GPS coordinates with other items from the same event or trip, but the inferred location will not reflect actual movement between shots.
 
 ## 📦 Download
 
@@ -298,7 +301,16 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 
 - **`-s`, `--simulate`**  
   Runs all processing steps but does not copy, move or link any files. Ideal for testing and previewing changes.
-  
+
+- **`-ha <type>`, `--hash-algo <type>`**  
+  Select the hashing algorithm for duplicate detection. By default, GroupMachine uses CRC64-ECMA-FAST, a very fast 64-bit checksum that reads only the first 64 KiB of each file. This is extremely efficient for spotting duplicates in large collections. You can override this with:
+
+  -  `md5` - Well-known and widely supported. Reads the entire file, so it is slower than CRC64-ECMA-FAST, but more accurate for full-file deduplication.
+  -  `sha` - Strong cryptographic hash. Slowest option, but provides maximum certainty when comparing full files. GroupMachine automatically chooses SHA256 on 32-bit systems and SHA512 on 64-bit systems.
+
+- **`-mp <number>`**, **`--max-parallel <number>`**  
+   Controls how many files are processed at the same time during copying, moving, or linking. By default, GroupMachine automatically chooses a safe number of parallel tasks based on your CPU and storage type. If you experience crashes, performance or stability issues, try reducing the number of parallel tasks. Use `-h` (`--help`) to see the default value for your system.
+
 - **`/?`. `-h`, `--help`**  
   Displays the full help text with all available options, credits and the location of the log files.
 
@@ -366,6 +378,19 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - GeoNames is a project of Unxos GmbH. This tool is not affiliated with or endorsed by Unxos GmbH.
 
 ## 🕰️ Version history
+
+### 1.2.0 (22 September 2025)
+- Improved grouping by filling missing/invalid GPS data (*imputing*) with locations inferred from photos taken close in time.
+- Moved content sorting by date earlier in the process to support imputing and improve debugging with logs.
+- Added automatic detection of a safe number of parallel tasks based on CPU and storage type to prevent `SEHException` crashes on network drives.
+- Added `-mp` (`--max-parallel`) option to allow users to override the default number of parallel copy, move, or link operations.
+- Default hashing switched to CRC64-ECMA-FAST (64 KiB prefix) for much faster performance; accidental collisions remain rare.
+- Added `-ha` (`--hash-algo`) to override the hashing algorithm with MD5 or SHA512 (SHA256 on 32-bit systems).
+- Added file size comparison before hashing to further improve duplicate-checking speed.
+- Fixed a bug where the last processed timestamp would be incorrectly updated to an earlier date.
+- Tidied up logging and removed superfluous entries.
+- Fixed a bug where the version checker formatted version numbers using .NET conventions instead of semantic versioning.
+- Updated publishing powershell script to avoid hanging after first build has been completed. 
 
 ### 1.1.0 (12 September 2025)
 

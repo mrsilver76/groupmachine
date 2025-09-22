@@ -20,7 +20,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 
 namespace GroupMachine
 {
@@ -50,8 +49,8 @@ namespace GroupMachine
 
             int success = 0, failure = 0;
 
-            // Use Parallel.ForEach to process images concurrently
-            Parallel.ForEach(Globals.ImageMetadataList, imageMetadata =>
+            // Use Parallel.ForEach to process images concurrently.
+            Parallel.ForEach(Globals.ImageMetadataList, new ParallelOptions { MaxDegreeOfParallelism = Globals.MaxParallel }, imageMetadata =>
             {
                 string albumPath = Path.Combine(Globals.DestinationFolder, imageMetadata.AlbumName);
                 string destinationFilePath = Path.Combine(albumPath, Path.GetFileName(imageMetadata.FileName));
@@ -97,7 +96,9 @@ namespace GroupMachine
             if (Globals.ImageMetadataList.Count > 0)
             {
                 var last = Globals.ImageMetadataList[^1];
-                Globals.SaveLastProcessedTimestamp(last.DateCreated);
+                // Only save if it's newer than the existing timestamp
+                if (Globals.LastProcessedTimestamp < last.DateCreated)
+                    Globals.SaveLastProcessedTimestamp(last.DateCreated);
             }
         }
 
@@ -162,7 +163,7 @@ namespace GroupMachine
             {
                 while (File.Exists(candidatePath))
                 {
-                    if (FilesAreEqual(sourceFilePath, candidatePath))
+                    if (Hashing.FilesAreEqual(sourceFilePath, candidatePath))
                     {
                         // Same file already exists, skip
                         Logger.Write($"Identical file already exists at {Path.GetRelativePath(Path.GetDirectoryName(sourceFilePath) ?? ".", candidatePath)}", true);
@@ -204,41 +205,6 @@ namespace GroupMachine
         }
 
         /// <summary>
-        /// Computes the SHA hash of the file at the specified path, selecting the optimal algorithm based on the system
-        /// architecture.
-        /// </summary>
-        /// <param name="path">The path to the file for which the hash is to be computed. Must not be null or empty.</param>
-        /// <returns>A byte array containing the computed hash of the file. The hash is computed using SHA-512 on 64-bit
-        /// architectures and SHA-256 on other architectures.</returns>
-        private static byte[] ComputeOptimalSHAHash(string path)
-        {
-            using var stream = File.OpenRead(path);
-
-            // Prefer SHA-512 on 64-bit architectures for better performance
-            using HashAlgorithm hashAlgorithm = RuntimeInformation.ProcessArchitecture switch
-            {
-                Architecture.X64 or Architecture.Arm64 => SHA512.Create(),
-                _ => SHA256.Create()
-            };
-
-            return hashAlgorithm.ComputeHash(stream);
-        }
-
-        /// <summary>
-        /// Compares the contents of two files to determine if they are identical.
-        /// </summary>
-        /// <remarks>This method uses a hash-based comparison to determine file equality.</remarks>
-        /// <param name="path1">The file path of the first file to compare. Cannot be null or empty.</param>
-        /// <param name="path2">The file path of the second file to compare. Cannot be null or empty.</param>
-        /// <returns><see langword="true"/> if the contents of the two files are identical; otherwise, <see langword="false"/>.</returns>
-        private static bool FilesAreEqual(string path1, string path2)
-        {
-            var hash1 = ComputeOptimalSHAHash(path1);
-            var hash2 = ComputeOptimalSHAHash(path2);
-            return hash1.SequenceEqual(hash2);
-        }
-
-        /// <summary>
         /// Given a string input, sanitises it for use as a folder name by removing invalid characters,
         /// and collapsing whitespace.
         /// </summary>
@@ -266,24 +232,28 @@ namespace GroupMachine
         {
             try
             {
+                // Resolve to absolute paths
+                var srcFull = Path.GetFullPath(source);
+                var dstFull = Path.GetFullPath(destination);
+
                 if (OperatingSystem.IsWindows())
                 {
-                    if (!NativeMethods.CreateHardLink(destination, source, IntPtr.Zero))
+                    if (!NativeMethods.CreateHardLink(dstFull, srcFull, IntPtr.Zero))
                     {
                         var err = Marshal.GetLastWin32Error();
                         // Fallback to symbolic link
-                        NativeMethods.CreateSymbolicLink(destination, source, 0); // 0 = file link
-                        Logger.Write($"Symlink fallback for {source} → {destination} due to error {err}", true);
+                        NativeMethods.CreateSymbolicLink(dstFull, srcFull, 0); // 0 = file link
+                        Logger.Write($"Symlink fallback for {srcFull} → {dstFull} due to error {err}", true);
                         softLinksCreated++;
                     }
                 }
                 else if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
                 {
-                    if (NativeMethods.Link(source, destination) != 0)
+                    if (NativeMethods.Link(srcFull, dstFull) != 0)
                     {
                         // Fallback to symbolic link
-                        NativeMethods.Symlink(source, destination);
-                        Logger.Write($"Symlink fallback for {source} → {destination} due to error {Marshal.GetLastPInvokeError()}", true);
+                        NativeMethods.Symlink(srcFull, dstFull);
+                        Logger.Write($"Symlink fallback for {srcFull} → {dstFull} due to error {Marshal.GetLastPInvokeError()}", true);
                         softLinksCreated++;
                     }
                 }
@@ -292,9 +262,10 @@ namespace GroupMachine
                     throw new PlatformNotSupportedException("Unsupported OS for hard linking.");
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Optional: swallow or rethrow; swallowing here to match “silently fall back” intent
+                Logger.Write($"Exception {ex.GetType().Name}: {ex.Message}", true);
+                throw;
             }
         }
 

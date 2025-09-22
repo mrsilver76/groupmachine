@@ -24,6 +24,9 @@ using static GroupMachine.Globals;
 
 namespace GroupMachine
 {
+    /// <summary>
+    /// Handles console output, including usage information, headers, and version checks.
+    /// </summary>
     internal sealed class ConsoleOutput
     {
         /// <summary>
@@ -40,45 +43,49 @@ namespace GroupMachine
                 Console.WriteLine($"This is version {VersionHelper.OutputVersion(Globals.ProgramVersion)}, copyright © 2025-{DateTime.Now.Year} Richard Lawrence.\n" +
                                     "Gallery icons created by Freepik - Flaticon (https://www.flaticon.com/free-icons/gallery)\n");
 
-            Console.WriteLine(  "Options:\n" +
-                                "   -o, --output <folder>       Destination folder for albums (required).\n" +
-                                "   -m, --move                  Move files (one of -m/-c/-l required)\n" +
-                                "   -c, --copy                  Copy files (one of -m/-c/-l required)\n" +
-                                "   -l, --link                  Hard/soft link (one of -m/-c/-l required)\n\n" +
-                                "  File selection:\n" +
-                                "   -r, --recursive             Include subfolders.\n" +
-                                "   -nv, --no-video             Exclude videos.\n" +
-                                "   -np, --no-photo             Exclude photos.\n" +
-                                "   -df, --date-from <date>     Include files after this date.\n" +
-                                "                                ISO 8601: yyyy-mm-dd or yyyy-mm-dd hh:mm:ss\n" +
-                                "                                Use \"last\" to continue from previous file.\n" +
-                                "   -dt, --date-to <date>       Include files on or before this date.\n" +
-                                "                                ISO 8601: yyyy-mm-dd or yyyy-mm-dd hh:mm:ss\n" +
-                                "                                Use \"last\" to continue from previous file.\n" +
-                                "   -xr, --exclude-recent       Exclude files within the -t threshold from now.\n\n" +
-                                "  Grouping logic:\n" +
-                                "   -d, --distance              Distance in km (default: 50). 0 disables.\n" +
-                                "   -t, --time                  Time in hours (default: 48). 0 disables.\n\n" +
-                                "  Album naming:\n" +
-                                "   -g, --geocode <file>        GeoNames data file; if missing, dates used.\n" +
-                                "   -f, --format                Album date format (default: dd MMM yyyy).\n" +
-                                "                                Example: \"yyyy-MM-dd\" → 2025-07-15\n" +
-                                "   -p, --precise               Use precise location names (stations, parks).\n" +
-                                "   -a, --append                Append date format to geolocated albums.\n" +
-                                "                                Example: \"MMMM YYYY\" → July 2025\n" +
-                                "   -nr, --no-range             Disable date ranges; album names will use only\n" +
-                                "   -nr, --no-range              the first item's date.\n" +
-                                "   -np, --no-part              Don't use part numbers; multiple groups on the\n" +
-                                "                                same day stay in one album.\n" +
-                                "   -pa, --prefix-album <text>  Prefix for album folder names. Use / for\n" +
-                                "                                subfolders and <yyyy>, <MM>, <dd> etc. for date.\n" +
-                                "   -u, --unique                Ensure album names do not match existing folders\n" +
-                                "                                (adds (1), (2), ... if needed)\n\n" +
-                                "  Others:\n" +
-                                "   -nc, --no-check            Don't check GitHub for later versions.\n" +
-                                "   -s, --simulate             Test mode; no files moved, copied, or linked.\n" +
-                                "   /?, -h, --help             Show this help.\n\n" +
-                                $"Logs are stored in {Path.Combine(Globals.AppDataPath, "Logs")}");
+            Console.WriteLine("Options:\n" +
+                                    "   -o, --output <folder>       Destination folder for albums (required).\n" +
+                                    "   -m, --move                  Move files (one of -m/-c/-l required)\n" +
+                                    "   -c, --copy                  Copy files (one of -m/-c/-l required)\n" +
+                                    "   -l, --link                  Hard/soft link (one of -m/-c/-l required)\n\n" +
+                                    "  File selection:\n" +
+                                    "   -r, --recursive             Include subfolders.\n" +
+                                    "   -nv, --no-video             Exclude videos.\n" +
+                                    "   -np, --no-photo             Exclude photos.\n" +
+                                    "   -df, --date-from <date>     Include files after this date.\n" +
+                                    "                                ISO 8601: yyyy-mm-dd or yyyy-mm-dd hh:mm:ss\n" +
+                                    "                                Use \"last\" to continue from previous file.\n" +
+                                    "   -dt, --date-to <date>       Include files on or before this date.\n" +
+                                    "                                ISO 8601: yyyy-mm-dd or yyyy-mm-dd hh:mm:ss\n" +
+                                    "                                Use \"last\" to continue from previous file.\n" +
+                                    "   -xr, --exclude-recent       Exclude files within the -t threshold from now.\n\n" +
+                                    "  Grouping logic:\n" +
+                                    "   -d, --distance              Distance in km (default: 50). 0 disables.\n" +
+                                    "   -t, --time                  Time in hours (default: 48). 0 disables.\n\n" +
+                                    "  Album naming:\n" +
+                                    "   -g, --geocode <file>        GeoNames data file; if missing, dates used.\n" +
+                                    "   -f, --format                Album date format (default: dd MMM yyyy).\n" +
+                                    "                                Example: \"yyyy-MM-dd\" → 2025-07-15\n" +
+                                    "   -p, --precise               Use precise location names (stations, parks).\n" +
+                                    "   -a, --append                Append date format to geolocated albums.\n" +
+                                    "                                Example: \"MMMM YYYY\" → July 2025\n" +
+                                    "   -nr, --no-range             Disable date ranges; album names will use only\n" +
+                                    "   -nr, --no-range              the first item's date.\n" +
+                                    "   -np, --no-part              Don't use part numbers; multiple groups on the\n" +
+                                    "                                same day stay in one album.\n" +
+                                    "   -pa, --prefix-album <text>  Prefix for album folder names. Use / for\n" +
+                                    "                                subfolders and <yyyy>, <MM>, <dd> etc. for date.\n" +
+                                    "   -u, --unique                Ensure album names do not match existing folders\n" +
+                                    "                                (adds (1), (2), ... if needed)\n\n" +
+                                    "  Others:\n" +
+                                    "   -nc, --no-check             Don't check GitHub for later versions.\n" +
+                                    "   -ha, --hash-algo <type>     Hash algorithm for duplicate file checking.\n" +
+                                    "                                Options: crc, md5, sha (default: crc).\n" +
+                                    "   -mp, --max-parallel <num>   Limit parallel copy, move or link operations.\n" +
+                                   $"                                Default: {CommandLineParser.CalculateTasks(true)} for local, {CommandLineParser.CalculateTasks(false)} for network.\n" +
+                                    "   -s, --simulate              Test mode; no files moved, copied, or linked.\n" +
+                                    "   /?, -h, --help              Show this help.\n\n" +
+                                    $"Logs are stored in {Path.Combine(Globals.AppDataPath, "Logs")}");
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
@@ -162,6 +169,20 @@ namespace GroupMachine
                 : "Unknown";
             items.Add(("Copy mode:", copyMode));
 
+            // Duplicate handling
+            string dupMode = Globals.DuplicateCheckMode switch
+            {
+                HashMode.CRC => "CRC64-ECMA-FAST (64 KiB prefix only)",
+                HashMode.MD5 => "MD5",
+                HashMode.SHA => RuntimeInformation.ProcessArchitecture switch
+                {
+                    Architecture.X64 or Architecture.Arm64 => "SHA-512 (for 64-bit systems)",
+                    _ => "SHA-256 (for 32-bit systems)"
+                },
+                _ => "Unknown"
+            };
+            items.Add(("Duplicate check:", dupMode));
+
             // Flags
             if (CommandLineParser.ParsedFlags.Count > 0)
                 items.Add(("Other flags:", string.Join(", ", CommandLineParser.ParsedFlags)));
@@ -183,8 +204,7 @@ namespace GroupMachine
             Console.WriteLine(new string('-', 70));
             Console.WriteLine();
 
-            // Log details
-            Logger.Write("GroupMachine started.");
+            // Log environment info
             LogEnvironmentInfo(args);
 
             // Warn if date format may be ambiguous
@@ -244,16 +264,17 @@ namespace GroupMachine
             if (Globals.GitHubVersionCheck == false)
                 return;
 
-            var result = GitHubVersionChecker.CheckLatestRelease(Globals.ProgramVersion, "mrsilver76/groupmachine", Path.Combine(Globals.AppDataPath, "versionCheck.ini"));
+            string gitRepo = "mrsilver76/groupmachine";
+            var result = GitHubVersionChecker.CheckLatestRelease(Globals.ProgramVersion, gitRepo, Path.Combine(Globals.AppDataPath, "versionCheck.ini"));
 
             if (result.UpdateAvailable)
             {
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.Write($"  ℹ️ A new version ({result.LatestVersion}) is available!");
+                Console.Write($"  ℹ️ A new version ({VersionHelper.OutputVersion(result.LatestVersion)}) is available!");
                 Console.ResetColor();
-                Console.WriteLine($" You are using {result.CurrentVersion}");
-                Console.WriteLine($"     Get it from https://www.github.com/{result.Repo}/");
+                Console.WriteLine($" You are using {VersionHelper.OutputVersion(Globals.ProgramVersion)}");
+                Console.WriteLine($"     Get it from https://www.github.com/{gitRepo}/");
             }
         }
     }
