@@ -239,12 +239,17 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 - **`-f <format>`, `--format <format>`**   
   Date format used for album folder names that use dates. This follows the [.NET DateTime format syntax](#datetime-format-syntax). The default is `dd MMM yyyy` (e.g., _"20 Jul 2025"_). Used when no GeoNames data is provided or no location can be determined.
 
-- **`-p`, `--precise`**   
-  Use more specific named locations in album titles (e.g. _"Eiffel Tower"_ instead of _"Paris"_).
 
-  By default, GroupMachine avoids GeoNames entries from the [spot ("S") feature class](https://www.geonames.org/export/codes.html#:~:text=S%20spot%2C%20building%2C%20farm), as they can produce overly specific or inconsistent album names. Enabling this option allows use of select named places typically relevant to tourist photography.
+- **`-p <number>`, `--precision <number>`**   
+  Defines how detailed the location names are when GroupMachine generates album titles. Lower numbers produces broader, more general album names (grouping photos by major cities or districts), while higher numbers produce more specific names (including neighborhoods, landmarks, and points of interest). The default is level 1 (broad).
 
-  Only the following types of places are included:
+  |Level|Precision|Areas|Example|
+  |:----|:---|:----|:------|
+  |1|Broad|Towns, cities & districts|_Paris, Versailles_|
+  |2|Standard|As broad + villages & local areas|_Le Marais, Montreuil_|
+  |3|Precise|As standard + spot features (see below)|_Place des Vosges, Sainte-Chapelle_|
+  
+  Spot features are individual landmarks, buildings, or points of interest. Level 3 (precise) includes selected spot features that are typically relevant to tourist photography:
 
   - **Cultural landmarks:** castles, monuments, palaces, temples, mosques, churches, theatres, opera houses.
   - **Historic and archaeological sites:** ruins, tombs, pyramids, historical or archaeological sites.
@@ -253,8 +258,8 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
   - **Leisure and resort areas:** marinas, resorts, golf courses, spas.
   - **Religious or spiritual locations:** missions, shrines.
 
-  The list is fixed and cannot be changed.
-
+  The list of spot features is fixed and cannot be changed.
+  
 - **`-a <format>`, `--append <format>`**  
   Date format to append to album folder names that use locations. Useful to distinguish multiple visits to the same location. Dates are appended within brackets - e.g. using `MMM yyyy` will produce "_Paris, Le Marais, and Versailles (Apr 2025)_". Dates are defined using the [.NET DateTime format syntax](#datetime-format-syntax).
 
@@ -378,6 +383,9 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - GeoNames is a project of Unxos GmbH. This tool is not affiliated with or endorsed by Unxos GmbH.
 
 ## 🕰️ Version history
+
+### 1.3.0 (xx October 2025)
+- Replaced `-p` (`--precise`) with new `-p` (`--precision`) to support three levels of album naming detail.
 
 ### 1.2.0 (22 September 2025)
 - Improved grouping by filling missing/invalid GPS data (*imputing*) with locations inferred from photos taken close in time.
