@@ -65,7 +65,7 @@ If you frequently visit the same places, you can avoid album name collisions by 
 
 To use this feature, download a GeoNames database file from [here](https://www.geonames.org/export/). You can choose `allCountries.zip` for global data or the `.zip` file for a specific country. A list of supported countries and datasets is available [here](https://www.geonames.org/datasources/). You'll then need to manually decompress the `.zip` file and pass the path and filename of the extracted `.txt` file to the program using `-g` or `--geocode`.
 
-Location selection avoids overly narrow names. GroupMachine prioritises general place names (e.g. _"Paris"_) over exact landmarks (e.g. _"Eiffel Tower"_), giving you cleaner and more useful album names. You can override this by using the `-p` (`--precise`) option to include well-known landmarks.
+Location selection avoids overly narrow names. GroupMachine prioritises broader place names (e.g. _"Paris"_) over exact landmarks (e.g. _"Eiffel Tower"_), so albums are grouped by larger, recognisable areas. You can adjust the level of detail with `-p` (`--precision`), choosing between broad (cities/districts), standard (neighbourhoods/villages), or precise (landmarks and points of interest).
 
 >[!TIP]
 >If your photos span multiple countries, consider using the full `allCountries.txt` dataset for best results. It takes longer to load but ensures accurate results across borders.
@@ -280,15 +280,17 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
  
 #### Examples
 
-|Command|Album date|Without GeoNames|With GeoNames|Notes|
-|-------|----------|----------------|-------------|-----|
-|`-pa "Trip to "`|12 Jan 2025|`Trip to 5 Apr 2025 - 6 Apr 2025`|`Trip to Paris, Le Marais, and Versailles`|Prefix every album.|
-|`-pa "Weekend in"`|12 Jan 2025|`Weekend in5 Apr 2025 - 6 Apr 2025`|`Weekend inParis, Le Marais, and Versailles`|⚠️ **Missing trailing space causes run-on names!**|
-|`-pa "<yyyy>/"`|12 Jan 2025|`2025/5 Apr 2025 - 6 Apr 2025`|`2025/Paris, Le Marais, and Versailles`|Creates a year subfolder.|
-|`-pa "<yyyy>/<MM>_"`|12 Jan 2025|`2025/04_5 Apr 2025 - 6 Apr 2025`|`2025/04_Paris, Le Marais, and Versailles`|As above, but also month prefix on album name.|
-|`-pa "Year <yyyy>/<MMMM>/"`|12 Jan 2025|`Year 2025/April/5 Apr 2025 - 6 Apr 2025`|`Year 2025/April/Paris, Le Marais, and Versailles`|Deeper nesting folders.|
-|`-pa "<yyyy>\<MMM>- "`|12 Jan 2025|`2025\Apr- 5 Apr 2025 - 6 Apr 2025`|`2025\Apr- Paris, Le Marais, and Versailles`|Windows path seperator also supported.|
-|`-pa "<yyyy>"`|12 Jan 2025|`20255 Apr 2025 - 6 Apr 2025`|`2025Paris, Le Marais, and Versailles`|⚠️ **No trailing `/` or `/` means prefix not folder.**|
+Below are a few examples of using the prefix option to modify album names and/or create subfolders. In all cases, the album date is 5 April 2025. Examples marked with ⚠️ may produce unintended results, so pay special attention to them.
+
+|Command|Without GeoNames|With GeoNames|Notes|
+|:------|:---------------|:------------|:----|
+|`-pa "Trip to "`|`Trip to 5 Apr 2025 - 6 Apr 2025`|`Trip to Paris, Le Marais, and Versailles`|Prefix every album.|
+|`-pa "Weekend in"`|`Weekend in5 Apr 2025 - 6 Apr 2025`|`Weekend inParis, Le Marais, and Versailles`|⚠️ **Missing trailing space causes run-on names!**|
+|`-pa "<yyyy>/"`|`2025/5 Apr 2025 - 6 Apr 2025`|`2025/Paris, Le Marais, and Versailles`|Creates a year subfolder.|
+|`-pa "<yyyy>/<MM>_"`|`2025/04_5 Apr 2025 - 6 Apr 2025`|`2025/04_Paris, Le Marais, and Versailles`|As above, but also month prefix on album name.|
+|`-pa "Year <yyyy>/<MMMM>/"`|`Year 2025/April/5 Apr 2025 - 6 Apr 2025`|`Year 2025/April/Paris, Le Marais, and Versailles`|Deeper nesting folders.|
+|`-pa "<yyyy>\<MMM>- "`|`2025\Apr- 5 Apr 2025 - 6 Apr 2025`|`2025\Apr- Paris, Le Marais, and Versailles`|Windows path seperator also supported.|
+|`-pa "<yyyy>"`|`20255 Apr 2025 - 6 Apr 2025`|`2025Paris, Le Marais, and Versailles`|⚠️ **No trailing `/` or `/` means prefix not folder.**|
 
 >[!CAUTION]
 > - If you don’t include a trailing space in your prefix, the album name will run directly after your text.  
@@ -327,7 +329,7 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 The `-f` (`--format`), `-a` (`--append`) and `-pa` (`--prefix-album`) options accept date formats using the .NET DateTime format syntax, allowing you to customize how dates appear. Below is a list of commonly used date formats for your reference:
 
 |Format String|Description|Example Output|
-|-------------|-----------|--------------|
+|:------------|:----------|:-------------|
 |`dd MMM yyyy`|Day (two digits) Month abbrev. Year (four digits)|`20 Jul 2025`|
 |`dd MMMM yyyy`|Day (two digits) Full month name Year (four digits)|`20 July 2025`|
 |`MM/dd/yyyy`|Month/day/year (common US format)|`07/20/2025`|
@@ -368,7 +370,6 @@ Key points for setting up an automated workflow:
 > A simple workflow could be a daily or weekly script that downloads new images, then runs GroupMachine with `-df last -xr -pa "<yyyy>/"` to
 > incrementally organize new content into neatly named, chronological albums.
 
-
 ## 🛟 Questions/problems?
 
 Please raise an issue at https://github.com/mrsilver76/groupmachine/issues.
@@ -389,6 +390,7 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ### 1.3.0 (xx October 2025)
 - Replaced `-p` (`--precise`) with new `-p` (`--precision`) to support three levels of album naming detail.
+- Updated documentation.
 
 ### 1.2.0 (22 September 2025)
 - Improved grouping by filling missing/invalid GPS data (*imputing*) with locations inferred from photos taken close in time.
