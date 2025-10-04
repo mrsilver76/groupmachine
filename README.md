@@ -47,7 +47,7 @@ Because the grouping relies on metadata timestamps and GPS coordinates, it assum
 These assumptions generally hold true for photos and videos taken by modern smartphones and digital cameras. If the time metadata is missing or invalid, GroupMachine
 can use the created or last modified timestamp of the file instead (whichever is the earliest). 
 
-You can override these defaults using `-t` (`--time`) and `-d` (`--distance`).
+You can override these defaults using `-t` (`--time`) and `-d` (`--distance`). In regions where towns and landmarks are closer together (such as the UK, much of Europe, or Japan), a smaller distance like 25 km may produce more meaningful albums.
 
 >[!NOTE]
 >Videos with embedded GPS data are not currently supported. Most consumer devices (including iPhones) do not store location metadata in videos, so location-based grouping only applies to photos. However, videos will still be included in albums based on time proximity - if they fall within the configured time threshold, they’ll be grouped alongside nearby photos.
@@ -224,6 +224,9 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 
 - **`-d <number>`, `--distance <number>`**   
   Distance threshold in kilometers. If two consecutive photos or videos are taken more than this distance apart, a new album is started. Set to `0` to disable distance-based grouping. If not supplied, the default is 50 km.
+
+>[!TIP]
+>In regions with denser settlements (e.g. the UK, much of Europe, Japan), a smaller value such as 25 km may give more meaningful results.
 
 - **`-t <number>`, `--time <number>`**   
   Time threshold in hours. If two consecutive photos or videos are taken more than this many hours apart, a new album is started. Set to `0` to disable time-based grouping. If not supplied, the default is 48 hours.
