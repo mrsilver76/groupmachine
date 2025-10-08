@@ -5,7 +5,7 @@
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  *  
  * This program is distributed in the hope that it will be useful,
@@ -78,6 +78,12 @@ namespace GroupMachine
 
             Logger.Write($"Extracting metadata from {GrammarHelper.Pluralise(allFiles.Count, "file", "files")}...");
 
+            // Setup the progress bar
+
+            ProgressBar.Total = allFiles.Count;
+            ProgressBar.Start();
+            int completedCount = 0;
+
             var concurrentList = new ConcurrentBag<Globals.ImageMetadata>();
            
             Parallel.ForEach(allFiles, filePath =>
@@ -105,7 +111,14 @@ namespace GroupMachine
                 {
                     Logger.Write($"Error reading metadata from {Path.GetFileName(filePath)}: {ex.Message}", true);
                 }
+                finally
+                {
+                    Interlocked.Increment(ref completedCount);
+                    ProgressBar.Completed = completedCount;
+                }
             });
+
+            ProgressBar.Stop();
 
             // Copy the concurrent list to a normal list for further processing
             Globals.ImageMetadataList = [.. concurrentList];

@@ -5,7 +5,7 @@
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  *  
  * This program is distributed in the hope that it will be useful,
@@ -66,7 +66,10 @@ namespace GroupMachine
                                     "   -g, --geocode <file>        GeoNames data file; if missing, dates used.\n" +
                                     "   -f, --format                Album date format (default: dd MMM yyyy).\n" +
                                     "                                Example: \"yyyy-MM-dd\" → 2025-07-15\n" +
-                                    "   -p, --precise               Use precise location names (stations, parks).\n" +
+                                    "   -p, --precision <num>       Location name precision (1-3, default: 1).\n" +
+                                    "                                1=broad (towns/cities & districts)\n" +
+                                    "                                2=standard (as broad + villages & local areas)\n" +
+                                    "                                3=precise (as standard + spot features)\n" +
                                     "   -a, --append                Append date format to geolocated albums.\n" +
                                     "                                Example: \"MMMM YYYY\" → July 2025\n" +
                                     "   -nr, --no-range             Disable date ranges; album names will use only\n" +
@@ -189,7 +192,15 @@ namespace GroupMachine
 
             // Geonames database location
             if (!string.IsNullOrEmpty(Globals.GeonamesDatabase))
+            {
                 items.Add(("GeoNames dbase:", Globals.GeonamesDatabase));
+                if (Globals.LocationPrecision == 1)
+                    items.Add(("Location precision:", "1. Broad (towns/cities & districts)"));
+                else if (Globals.LocationPrecision == 2)
+                    items.Add(("Location precision:", "2. Standard (as broad + villages & local areas)"));
+                else if (Globals.LocationPrecision == 3)
+                    items.Add(("Location precision:", "3. Precise (as standard + spot features)"));
+            }
 
             // Destination
             items.Add(("Destination:", Globals.DestinationFolder));

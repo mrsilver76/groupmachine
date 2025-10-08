@@ -47,7 +47,7 @@ Because the grouping relies on metadata timestamps and GPS coordinates, it assum
 These assumptions generally hold true for photos and videos taken by modern smartphones and digital cameras. If the time metadata is missing or invalid, GroupMachine
 can use the created or last modified timestamp of the file instead (whichever is the earliest). 
 
-You can override these defaults using `-t` (`--time`) and `-d` (`--distance`).
+You can override these defaults using `-t` (`--time`) and `-d` (`--distance`). In regions where towns and landmarks are closer together (such as the UK, much of Europe, or Japan), a smaller distance like 25 km may produce more meaningful albums.
 
 >[!NOTE]
 >Videos with embedded GPS data are not currently supported. Most consumer devices (including iPhones) do not store location metadata in videos, so location-based grouping only applies to photos. However, videos will still be included in albums based on time proximity - if they fall within the configured time threshold, they’ll be grouped alongside nearby photos.
@@ -65,7 +65,7 @@ If you frequently visit the same places, you can avoid album name collisions by 
 
 To use this feature, download a GeoNames database file from [here](https://www.geonames.org/export/). You can choose `allCountries.zip` for global data or the `.zip` file for a specific country. A list of supported countries and datasets is available [here](https://www.geonames.org/datasources/). You'll then need to manually decompress the `.zip` file and pass the path and filename of the extracted `.txt` file to the program using `-g` or `--geocode`.
 
-Location selection avoids overly narrow names. GroupMachine prioritises general place names (e.g. _"Paris"_) over exact landmarks (e.g. _"Eiffel Tower"_), giving you cleaner and more useful album names. You can override this by using the `-p` (`--precise`) option to include well-known landmarks.
+Location selection avoids overly narrow names. GroupMachine prioritises broader place names (e.g. _"Paris"_) over exact landmarks (e.g. _"Eiffel Tower"_), so albums are grouped by larger, recognisable areas. You can adjust the level of detail with `-p` (`--precision`), choosing between broad (cities/districts), standard (neighbourhoods/villages), or precise (landmarks and points of interest).
 
 >[!TIP]
 >If your photos span multiple countries, consider using the full `allCountries.txt` dataset for best results. It takes longer to load but ensures accurate results across borders.
@@ -225,6 +225,9 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 - **`-d <number>`, `--distance <number>`**   
   Distance threshold in kilometers. If two consecutive photos or videos are taken more than this distance apart, a new album is started. Set to `0` to disable distance-based grouping. If not supplied, the default is 50 km.
 
+>[!TIP]
+>In regions with denser settlements (e.g. the UK, much of Europe, Japan), a smaller value such as 25 km may give more meaningful results.
+
 - **`-t <number>`, `--time <number>`**   
   Time threshold in hours. If two consecutive photos or videos are taken more than this many hours apart, a new album is started. Set to `0` to disable time-based grouping. If not supplied, the default is 48 hours.
 
@@ -239,12 +242,17 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 - **`-f <format>`, `--format <format>`**   
   Date format used for album folder names that use dates. This follows the [.NET DateTime format syntax](#datetime-format-syntax). The default is `dd MMM yyyy` (e.g., _"20 Jul 2025"_). Used when no GeoNames data is provided or no location can be determined.
 
-- **`-p`, `--precise`**   
-  Use more specific named locations in album titles (e.g. _"Eiffel Tower"_ instead of _"Paris"_).
 
-  By default, GroupMachine avoids GeoNames entries from the [spot ("S") feature class](https://www.geonames.org/export/codes.html#:~:text=S%20spot%2C%20building%2C%20farm), as they can produce overly specific or inconsistent album names. Enabling this option allows use of select named places typically relevant to tourist photography.
+- **`-p <number>`, `--precision <number>`**   
+  Defines how detailed the location names are when GroupMachine generates album titles. Lower numbers produces broader, more general album names (grouping photos by major cities or districts), while higher numbers produce more specific names (including neighborhoods, landmarks, and points of interest). The default is level 1 (broad).
 
-  Only the following types of places are included:
+  |Level|Precision|Areas|Example|
+  |:----|:---|:----|:------|
+  |1|Broad|Towns, cities & districts|_Paris, Versailles_|
+  |2|Standard|As broad + villages & local areas|_Le Marais, Montreuil_|
+  |3|Precise|As standard + spot features (see below)|_Place des Vosges, Sainte-Chapelle_|
+  
+  Spot features are individual landmarks, buildings, or points of interest. Level 3 (precise) includes selected spot features that are typically relevant to tourist photography:
 
   - **Cultural landmarks:** castles, monuments, palaces, temples, mosques, churches, theatres, opera houses.
   - **Historic and archaeological sites:** ruins, tombs, pyramids, historical or archaeological sites.
@@ -253,8 +261,8 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
   - **Leisure and resort areas:** marinas, resorts, golf courses, spas.
   - **Religious or spiritual locations:** missions, shrines.
 
-  The list is fixed and cannot be changed.
-
+  The list of spot features is fixed and cannot be changed.
+  
 - **`-a <format>`, `--append <format>`**  
   Date format to append to album folder names that use locations. Useful to distinguish multiple visits to the same location. Dates are appended within brackets - e.g. using `MMM yyyy` will produce "_Paris, Le Marais, and Versailles (Apr 2025)_". Dates are defined using the [.NET DateTime format syntax](#datetime-format-syntax).
 
@@ -272,15 +280,17 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
  
 #### Examples
 
-|Command|Album date|Without GeoNames|With GeoNames|Notes|
-|-------|----------|----------------|-------------|-----|
-|`-pa "Trip to "`|12 Jan 2025|`Trip to 5 Apr 2025 - 6 Apr 2025`|`Trip to Paris, Le Marais, and Versailles`|Prefix every album.|
-|`-pa "Weekend in"`|12 Jan 2025|`Weekend in5 Apr 2025 - 6 Apr 2025`|`Weekend inParis, Le Marais, and Versailles`|⚠️ **Missing trailing space causes run-on names!**|
-|`-pa "<yyyy>/"`|12 Jan 2025|`2025/5 Apr 2025 - 6 Apr 2025`|`2025/Paris, Le Marais, and Versailles`|Creates a year subfolder.|
-|`-pa "<yyyy>/<MM>_"`|12 Jan 2025|`2025/04_5 Apr 2025 - 6 Apr 2025`|`2025/04_Paris, Le Marais, and Versailles`|As above, but also month prefix on album name.|
-|`-pa "Year <yyyy>/<MMMM>/"`|12 Jan 2025|`Year 2025/April/5 Apr 2025 - 6 Apr 2025`|`Year 2025/April/Paris, Le Marais, and Versailles`|Deeper nesting folders.|
-|`-pa "<yyyy>\<MMM>- "`|12 Jan 2025|`2025\Apr- 5 Apr 2025 - 6 Apr 2025`|`2025\Apr- Paris, Le Marais, and Versailles`|Windows path seperator also supported.|
-|`-pa "<yyyy>"`|12 Jan 2025|`20255 Apr 2025 - 6 Apr 2025`|`2025Paris, Le Marais, and Versailles`|⚠️ **No trailing `/` or `/` means prefix not folder.**|
+Below are a few examples of using the prefix option to modify album names and/or create subfolders. In all cases, the album date is 5 April 2025. Examples marked with ⚠️ may produce unintended results, so pay special attention to them.
+
+|Command|Without GeoNames|With GeoNames|Notes|
+|:------|:---------------|:------------|:----|
+|`-pa "Trip to "`|`Trip to 5 Apr 2025 - 6 Apr 2025`|`Trip to Paris, Le Marais, and Versailles`|Prefix every album.|
+|`-pa "Weekend in"`|`Weekend in5 Apr 2025 - 6 Apr 2025`|`Weekend inParis, Le Marais, and Versailles`|⚠️ **Missing trailing space causes run-on names!**|
+|`-pa "<yyyy>/"`|`2025/5 Apr 2025 - 6 Apr 2025`|`2025/Paris, Le Marais, and Versailles`|Creates a year subfolder.|
+|`-pa "<yyyy>/<MM>_"`|`2025/04_5 Apr 2025 - 6 Apr 2025`|`2025/04_Paris, Le Marais, and Versailles`|As above, but also month prefix on album name.|
+|`-pa "Year <yyyy>/<MMMM>/"`|`Year 2025/April/5 Apr 2025 - 6 Apr 2025`|`Year 2025/April/Paris, Le Marais, and Versailles`|Deeper nesting folders.|
+|`-pa "<yyyy>\<MMM>- "`|`2025\Apr- 5 Apr 2025 - 6 Apr 2025`|`2025\Apr- Paris, Le Marais, and Versailles`|Windows path seperator also supported.|
+|`-pa "<yyyy>"`|`20255 Apr 2025 - 6 Apr 2025`|`2025Paris, Le Marais, and Versailles`|⚠️ **No trailing `/` or `/` means prefix not folder.**|
 
 >[!CAUTION]
 > - If you don’t include a trailing space in your prefix, the album name will run directly after your text.  
@@ -319,7 +329,7 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 The `-f` (`--format`), `-a` (`--append`) and `-pa` (`--prefix-album`) options accept date formats using the .NET DateTime format syntax, allowing you to customize how dates appear. Below is a list of commonly used date formats for your reference:
 
 |Format String|Description|Example Output|
-|-------------|-----------|--------------|
+|:------------|:----------|:-------------|
 |`dd MMM yyyy`|Day (two digits) Month abbrev. Year (four digits)|`20 Jul 2025`|
 |`dd MMMM yyyy`|Day (two digits) Full month name Year (four digits)|`20 July 2025`|
 |`MM/dd/yyyy`|Month/day/year (common US format)|`07/20/2025`|
@@ -341,25 +351,19 @@ However, for those who want more automation, you can also create a workflow that
 Key points for setting up an automated workflow:
 
 - **Automate downloads** – Use a third-party tool to fetch images from your cloud service. For example, [iCloud Photos Downloader](https://github.com/icloud-photos-downloader/icloud_photos_downloader) can download photos and videos from iCloud. There are probably similar tools for Google Photos or other services.
-
 - **Unsupported HEIC images from Apple devices** – Photos in HEIC format (with the extension `.heic`) are not supported by GroupMachine. To automate conversion, use something like [ImageMagick](https://imagemagick.org/) (e.g., `magick.exe IMG_001.heic IMG_001.jpg`), after which GroupMachine can process the JPEG normally. Apple devices never generate a JPG with the same filename as a HEIC, so conversion won’t overwrite existing files.
-
 - **Process only new files** – Use `-df last` (`--date-from last`) to tell GroupMachine to only process files added since the last run. This prevents reprocessing older files and ensures incremental grouping.
-
 - **Access the last processed date** – If you need to incorporate further scripting, the last date processed is stored in `settings.ini`. You can locate this file by checking the path displayed when you run `-h` (`--help`), usually in the parent folder to the log files.
-
 - **Avoid premature album creation** – Include `-xr` (`--exclude-recent`) to hold off processing very recent photos. This ensures that files still likely to belong to the same album aren’t split across runs.
-
 - **Organize album names** – Use `-pa` (`--prefix-album`) to place albums into folders (for example, by year) or `-a` (`--append`) to add date elements to the album name (such as year or month). This prevents multiple visits to the same location from merging into a single folder and keeps your albums clear and chronological.
-
 - **Save disk space** – If you plan to keep all downloaded photos, consider using `-l` (`--link`) instead of copy or move. This creates links to the original files without duplicating them.
-
 - **Keep geocode data current** – If you’re using location-based album naming, update your GeoNames database periodically to ensure accurate place names.
+- **Integrate into Immich** – If you host your photos and videos with [Immich](https://immich.app/), use [Immich Folder Album Creator](https://github.com/Salvoxia/immich-folder-album-creator) to automatically turn the folders created by GroupMachine into albums within Immich.
+- **Use with other software** – [Picasa](https://picasa.en.softonic.com/) (Google’s legacy desktop app), as well as tools like [PhotoPrism](https://www.photoprism.app/), [LibrePhotos](https://github.com/LibrePhotos/librephotos), [Photoview](https://photoview.github.io/), and [digiKam](https://www.digikam.org/), detect and display albums based on your folder structure, making them compatible with GroupMachine’s output. [Synology Photos](https://www.synology.com/en-global/dsm/feature/photos), however, doesn’t currently offer a way to auto-generate albums from newly added folders or files.
 
 >[!TIP]
 > A simple workflow could be a daily or weekly script that downloads new images, then runs GroupMachine with `-df last -xr -pa "<yyyy>/"` to
 > incrementally organize new content into neatly named, chronological albums.
-
 
 ## 🛟 Questions/problems?
 
@@ -378,6 +382,12 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - GeoNames is a project of Unxos GmbH. This tool is not affiliated with or endorsed by Unxos GmbH.
 
 ## 🕰️ Version history
+
+### 1.3.0 (08 October 2025)
+- Replaced `-p` (`--precise`) with new `-p` (`--precision`) to support three levels of album naming detail.
+- Added progress bar for long running tasks; displays percentage complete and estimated time left.
+- Updated GPL copyright version in comments to correctly reflect GNU GPL v2 (or later).
+- Updated documentation.
 
 ### 1.2.0 (22 September 2025)
 - Improved grouping by filling missing/invalid GPS data (*imputing*) with locations inferred from photos taken close in time.
