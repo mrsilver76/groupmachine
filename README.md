@@ -383,7 +383,7 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ## 🕰️ Version history
 
-### 1.3.0 (xx October 2025)
+### 1.3.0 (08 October 2025)
 - Replaced `-p` (`--precise`) with new `-p` (`--precision`) to support three levels of album naming detail.
 - Added progress bar for long running tasks; displays percentage complete and estimated time left.
 - Updated GPL copyright version in comments to correctly reflect GNU GPL v2 (or later).
