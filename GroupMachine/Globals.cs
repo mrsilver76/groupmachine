@@ -5,7 +5,7 @@
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  *  
  * This program is distributed in the hope that it will be useful,
@@ -134,8 +134,8 @@ namespace GroupMachine
         /// <summary>If true, appends part numbers for albums with the same name.</summary>
         public static bool UsePartNumbers { get; set; } = true;
 
-        /// <summary>If true, uses precise geolocation for album names.</summary>
-        public static bool UsePreciseLocation { get; set; }
+        /// <summary>Level of precision (1-3) for album names. 1 is broad, 3 is explicit.</summary>
+        public static int LocationPrecision { get; set; } = 1;
 
         /// <summary>Include only media taken on or after this date.</summary>
         public static DateTime? DateTakenFrom { get; set; }
@@ -172,7 +172,7 @@ namespace GroupMachine
         public static Version ProgramVersion { get; set; } = Assembly.GetExecutingAssembly().GetName().Version!;
 
         /// <summary>Path to the application data folder.</summary>
-        public static string AppDataPath { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GroupMachine");
+        public static string AppDataPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GroupMachine");
 
         /// <summary>GeoNames lookup instance for resolving location names.</summary>
         public static GeoNamesLookup? GeoNamesLookup { get; set; }

@@ -5,7 +5,7 @@
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  *  
  * This program is distributed in the hope that it will be useful,
@@ -47,10 +47,15 @@ namespace GroupMachine
                     Globals.CurrentCopyMode = Globals.CopyMode.Copy;
                 else if (arg == "-l" || arg == "--link")
                     Globals.CurrentCopyMode = Globals.CopyMode.HardSoftLink;
-                else if (arg == "-p" || arg == "--precise")
+                else if (arg == "-p" || arg == "--precision")
                 {
-                    Globals.UsePreciseLocation = true;
-                    ParsedFlags.Add("Precise");
+                    if (int.TryParse(args[i+1], out int precision) && precision >= 1 && precision <= 3)
+                    {
+                        Globals.LocationPrecision = precision;
+                        i++; // Skip next argument as it's the value
+                    }
+                    else
+                        ConsoleOutput.ShowUsage("Invalid value for location precision (must be 1,2 or 3)");
                 }
                 else if (arg == "-r" || arg == "--recursive")
                 {

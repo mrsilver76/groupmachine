@@ -5,7 +5,7 @@
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  *  
  * This program is distributed in the hope that it will be useful,
@@ -49,6 +49,10 @@ namespace GroupMachine
 
             int success = 0, failure = 0;
 
+            // Set up the progress bar
+            ProgressBar.Total = Globals.ImageMetadataList.Count;
+            ProgressBar.Start();
+
             // Use Parallel.ForEach to process images concurrently.
             Parallel.ForEach(Globals.ImageMetadataList, new ParallelOptions { MaxDegreeOfParallelism = Globals.MaxParallel }, imageMetadata =>
             {
@@ -69,7 +73,12 @@ namespace GroupMachine
                     imageMetadata.DateCreated,
                     (_, existing) => imageMetadata.DateCreated < existing ? imageMetadata.DateCreated : existing
                 );
+
+                ProgressBar.Completed = success + failure;
+
             });
+
+            ProgressBar.Stop();
 
             if (softLinksCreated > 0)
                 Logger.Write($"Note: {GrammarHelper.Pluralise(softLinksCreated, "hard link", "hard links")} could not be created, reverted to soft links instead.", true);
