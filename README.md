@@ -351,20 +351,15 @@ However, for those who want more automation, you can also create a workflow that
 Key points for setting up an automated workflow:
 
 - **Automate downloads** – Use a third-party tool to fetch images from your cloud service. For example, [iCloud Photos Downloader](https://github.com/icloud-photos-downloader/icloud_photos_downloader) can download photos and videos from iCloud. There are probably similar tools for Google Photos or other services.
-
 - **Unsupported HEIC images from Apple devices** – Photos in HEIC format (with the extension `.heic`) are not supported by GroupMachine. To automate conversion, use something like [ImageMagick](https://imagemagick.org/) (e.g., `magick.exe IMG_001.heic IMG_001.jpg`), after which GroupMachine can process the JPEG normally. Apple devices never generate a JPG with the same filename as a HEIC, so conversion won’t overwrite existing files.
-
 - **Process only new files** – Use `-df last` (`--date-from last`) to tell GroupMachine to only process files added since the last run. This prevents reprocessing older files and ensures incremental grouping.
-
 - **Access the last processed date** – If you need to incorporate further scripting, the last date processed is stored in `settings.ini`. You can locate this file by checking the path displayed when you run `-h` (`--help`), usually in the parent folder to the log files.
-
 - **Avoid premature album creation** – Include `-xr` (`--exclude-recent`) to hold off processing very recent photos. This ensures that files still likely to belong to the same album aren’t split across runs.
-
 - **Organize album names** – Use `-pa` (`--prefix-album`) to place albums into folders (for example, by year) or `-a` (`--append`) to add date elements to the album name (such as year or month). This prevents multiple visits to the same location from merging into a single folder and keeps your albums clear and chronological.
-
 - **Save disk space** – If you plan to keep all downloaded photos, consider using `-l` (`--link`) instead of copy or move. This creates links to the original files without duplicating them.
-
 - **Keep geocode data current** – If you’re using location-based album naming, update your GeoNames database periodically to ensure accurate place names.
+- **Integrate into Immich** – If you host your photos and videos with [Immich](https://immich.app/), use [Immich Folder Album Creator](https://github.com/Salvoxia/immich-folder-album-creator) to automatically turn the folders created by GroupMachine into albums within Immich.
+- **Use with other software** – [Picasa](https://picasa.en.softonic.com/) (Google’s legacy desktop app), as well as tools like [PhotoPrism](https://www.photoprism.app/), [LibrePhotos](https://github.com/LibrePhotos/librephotos), [Photoview](https://photoview.github.io/), and [digiKam](https://www.digikam.org/), detect and display albums based on your folder structure, making them compatible with GroupMachine’s output. [Synology Photos](https://www.synology.com/en-global/dsm/feature/photos), however, doesn’t currently offer a way to auto-generate albums from newly added folders or files.
 
 >[!TIP]
 > A simple workflow could be a daily or weekly script that downloads new images, then runs GroupMachine with `-df last -xr -pa "<yyyy>/"` to
@@ -390,6 +385,8 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ### 1.3.0 (xx October 2025)
 - Replaced `-p` (`--precise`) with new `-p` (`--precision`) to support three levels of album naming detail.
+- Added progress bar for long running tasks; displays percentage complete and estimated time left.
+- Updated GPL copyright version in comments to correctly reflect GNU GPL v2 (or later).
 - Updated documentation.
 
 ### 1.2.0 (22 September 2025)
