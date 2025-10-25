@@ -98,8 +98,9 @@ Each release includes the following files (`x.x.x` denotes the version number):
 - Install the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime). Slightly more technical information can be found [here](https://learn.microsoft.com/en-gb/dotnet/core/install/macos).
 - ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
 - Make the downloaded file executable: `chmod +x GroupMachine-x.x.x-<your-platform>`
-- Apply an ad-hoc code signature: `codesign --force --deep --sign - GroupMachine-x.x.x-<your-platform>`
-- Remove the quarantine attribute: `xattr -d com.apple.quarantine GroupMachine-x.x.x-<your-platform>`
+- If you get `zsh: killed` when running the executable then:
+  - Apply an ad-hoc code signature: `codesign --force --deep --sign - GroupMachine-x.x.x-<your-platform>`
+  - Remove the quarantine attribute: `xattr -d com.apple.quarantine GroupMachine-x.x.x-<your-platform>`
 
 ### Linux users
 
