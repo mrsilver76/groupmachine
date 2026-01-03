@@ -1,4 +1,8 @@
 # GroupMachine
+
+<p><img src="https://img.shields.io/badge/Windows-supported-0078D6?logo=windows&logoColor=white" alt="Windows"> <img src="https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=black" alt="Linux"> <img src="https://img.shields.io/badge/macOS-supported-000000?logo=apple&logoColor=white" alt="macOS"> <img src="https://img.shields.io/badge/.NET-C%23-512BD4?logo=dotnet&logoColor=white" alt=".NET/C#"> 
+<img src="https://img.shields.io/github/license/mrsilver76/groupmachine?logo=gnu&logoColor=white" alt="GPL License"></p>
+
 _A cross-platform command-line tool (Windows, Linux, macOS) for grouping photos and videos into albums (folders) based on time and location changes.
 It can also name these albums using real-world place names, making your collections more meaningful and easier to navigate._
 
