@@ -23,6 +23,7 @@ naturally reflects your trips, events, or outings without manual sorting.
 
 - 💻 Runs on Windows 10 & 11, Linux (x64, ARM64, ARM32), and macOS (Intel & Apple Silicon)
 - 🖼️ Groups downloaded photos and videos into albums based on time and location.
+- 🍏 Supports Apple Live Photos, keeping the photo and video parts together.
 - 🧾 Uses photo and video metadata for the most accurate time and location (with fallback to file timestamps)
 - ⏱️ Uses a configurable time gap (default: 48 hours) to define album boundaries.
 - 📏 Uses a configurable distance gap (default: 50 km) to define album boundaries.
@@ -52,9 +53,6 @@ These assumptions generally hold true for photos and videos taken by modern smar
 can use the created or last modified timestamp of the file instead (whichever is the earliest). 
 
 You can override these defaults using `-t` (`--time`) and `-d` (`--distance`). In regions where towns and landmarks are closer together (such as the UK, much of Europe, or Japan), a smaller distance like 25 km may produce more meaningful albums.
-
->[!NOTE]
->Videos with embedded GPS data are not currently supported. Most consumer devices (including iPhones) do not store location metadata in videos, so location-based grouping only applies to photos. However, videos will still be included in albums based on time proximity - if they fall within the configured time threshold, they’ll be grouped alongside nearby photos.
 
 ## 🧭 Enhancing album names using location data
 
@@ -365,7 +363,7 @@ However, for those who want more automation, you can also create a workflow that
 Key points for setting up an automated workflow:
 
 - **Automate downloads** – Use a third-party tool to fetch images from your cloud service. For example, [iCloud Photos Downloader](https://github.com/icloud-photos-downloader/icloud_photos_downloader) can download photos and videos from iCloud. There are probably similar tools for Google Photos or other services.
-- **Unsupported HEIC images from Apple devices** – Photos in HEIC format (with the extension `.heic`) are not supported by GroupMachine. To automate conversion, use something like [ImageMagick](https://imagemagick.org/) (e.g., `magick.exe IMG_001.heic IMG_001.jpg`), after which GroupMachine can process the JPEG normally. Apple devices never generate a JPG with the same filename as a HEIC, so conversion won’t overwrite existing files.
+- **Unsupported HEIC images from Apple devices** – Photos in HEIC format (with the extension `.heic`) are not supported by GroupMachine. To automate conversion, use something like [ImageMagick](https://imagemagick.org/) (e.g., `magick.exe IMG_001.heic IMG_001.jpg`), after which GroupMachine can process the JPEG normally. Apple devices never generate a JPG with the same filename as a HEIC, so conversion won’t overwrite existing files. 
 - **Process only new files** – Use `-df last` (`--date-from last`) to tell GroupMachine to only process files added since the last run. This prevents reprocessing older files and ensures incremental grouping.
 - **Access the last processed date** – If you need to incorporate further scripting, the last date processed is stored in `settings.ini`. You can locate this file by checking the path displayed when you run `-h` (`--help`), usually in the parent folder to the log files.
 - **Avoid premature album creation** – Include `-xr` (`--exclude-recent`) to hold off processing very recent photos. This ensures that files still likely to belong to the same album aren’t split across runs.
@@ -396,6 +394,10 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - GeoNames is a project of Unxos GmbH. This tool is not affiliated with or endorsed by Unxos GmbH.
 
 ## 🕰️ Version history
+
+### 1.4.0 (xx February 2026)
+- Added support for extracting GPS metadata from videos; handles XMP, DMS, decimal and ISO 6709 formats commonly used by both iOS and Android.
+- Tidied up formatting of progress bar for better terminal compatibility.
 
 ### 1.3.0 (08 October 2025)
 - Replaced `-p` (`--precise`) with new `-p` (`--precision`) to support three levels of album naming detail.
