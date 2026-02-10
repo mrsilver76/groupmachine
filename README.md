@@ -26,7 +26,7 @@ naturally reflects your trips, events, or outings without manual sorting.
 - 🍏 Supports Apple Live Photos, keeping the photo and video parts together.
 - 🧾 Uses photo and video metadata for the most accurate time and location (with fallback to file timestamps)
 - ⏱️ Uses a configurable time gap (default: 48 hours) to define album boundaries.
-- 📏 Uses a configurable distance gap (default: 50 km) to define album boundaries.
+- 📏 Uses a configurable distance gap (default: 10 km) to define album boundaries.
 - ⏳ Supports date ranges, can ignore recent photos and can resume from last processed.
 - 🗺️ Supports the GeoNames database to give album folders meaningful place names.
 - 📍 Fills missing or invalid GPS data by inferring locations from nearby photos taken close in time.
@@ -44,7 +44,7 @@ naturally reflects your trips, events, or outings without manual sorting.
 Grouping is based on two key factors: the time between shots and the distance between their locations. When the gap between consecutive
 photos or videos exceeds either the time or distance threshold, a new album is started.
 
-Using the default thresholds (48 hours and 50 km) means that photos/videos taken less than 2 days apart and within 50 kilometres (or 31 miles) will be grouped together.
+Using the default thresholds (48 hours and 10 km) means that photos/videos taken less than 2 days apart and within 10 kilometres (or 6.2 miles) will be grouped together.
 For example, photos/videos taken during a single day trip or a weekend away will usually fall into the same album. If you then travel to a different city
 a few days later, that will create a new album. This approach is designed to reflect natural breaks in your timeline, capturing major location changes or extended time gaps.
 
@@ -52,7 +52,10 @@ Because the grouping relies on metadata timestamps and GPS coordinates, it assum
 These assumptions generally hold true for photos and videos taken by modern smartphones and digital cameras. If the time metadata is missing or invalid, GroupMachine
 can use the created or last modified timestamp of the file instead (whichever is the earliest). 
 
-You can override these defaults using `-t` (`--time`) and `-d` (`--distance`). In regions where towns and landmarks are closer together (such as the UK, much of Europe, or Japan), a smaller distance like 25 km may produce more meaningful albums.
+You can override these defaults using `-t` (`--time`) and `-d` (`--distance`).
+
+> [!TIP]
+> In regions where towns and landmarks are more widely spaced, a larger distance than the default 10 km may produce better album names - for example, the United States, Canada, Australia and New Zealand.
 
 ## 🧭 Enhancing album names using location data
 
@@ -61,9 +64,9 @@ the [GeoNames](https://www.geonames.org/) database, which maps GPS coordinates t
 
 If you provide the GeoNames data, GroupMachine will look up the nearest populated place for each photo or video. It then selects up to four place names for the album title. These are chosen in the order they first appear in the group, with less frequent locations dropped if more than four are found. The result is a name that prioritises the most representative places, preserving the order of your journey.
 
-For example, an album might be named "_Paris, Le Marais, and Versailles_" instead of just "_5 Apr 2025 - 6 Apr 2025_".
+For example, an album might be named "_Le Marais, Montmartre and Latin Quarter_" instead of just "_4 Apr 2025 - 7 Apr 2025_".
 
-If you frequently visit the same places, you can avoid album name collisions by appending a date to each name using `-a` or `--append`. For instance, using `--append "MMMM yyyy"` would label your album as "_Paris, Le Marais and Versailles (April 2025)_"
+If you frequently visit the same places, you can avoid album name collisions by appending a date to each name using `-a` or `--append`. For instance, using `--append "MMMM yyyy"` would label your album as "_Le Marais, Montmartre and Latin Quarter (April 2025)_"
 
 To use this feature, download a GeoNames database file from [here](https://www.geonames.org/export/). You can choose `allCountries.zip` for global data or the `.zip` file for a specific country. A list of supported countries and datasets is available [here](https://www.geonames.org/datasources/). You'll then need to manually decompress the `.zip` file and pass the path and filename of the extracted `.txt` file to the program using `-g` or `--geocode`.
 
@@ -129,7 +132,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 ## 🚀 Quick start guide
 
-This is the simplest way to use GroupMachine. It scans `d:\Photos` (and all sub-folders) for photo/video content and moves it into dated subfolders within `e:\My Album`. It uses the default thresholds (48 hours and 50 km) and default date format (eg `20 Jul 2025`).
+This is the simplest way to use GroupMachine. It scans `d:\Photos` (and all sub-folders) for photo/video content and moves it into dated subfolders within `e:\My Album`. It uses the default thresholds (48 hours and 10 km) and default date format (eg `20 Jul 2025`).
 
 ```
 GroupMachine "d:\Photos" -m -r -o "e:\My Album"
@@ -145,13 +148,12 @@ GroupMachine "d:\Photos" -o "e:\My Album" -r -g c:\temp\allCountries.txt -a "YYY
 GroupMachine "d:\Photos" --output "e:\My Album" --recursive --geocode "c:\temp\allCountries.txt" --append "YYYY" --copy
 ```
 
-This example shows how to change the thresholds (to 24 hours and 10 km), the date format of the folder names (to ISO-8601 format) and to skip looking for videos.
+This example shows how to change the thresholds (to 24 hours and 50 km), the date format of the folder names (to ISO-8601 format) and to skip looking for videos.
 
 ```
-GroupMachine "d:\Photos" -r -o "e:\My Album" -t 24 -d 10 -f "yyyy-MM-dd" -nv -c
+GroupMachine "d:\Photos" -r -o "e:\My Album" -t 24 -d 50 -f "yyyy-MM-dd" -nv -c
 
-GroupMachine "d:\Photos" --recursive --output "e:\My Album" --time 24 --distance 10 --format "yyyy-MM-dd" --no-videos --copy
-
+GroupMachine "d:\Photos" --recursive --output "e:\My Album" --time 24 --distance 50 --format "yyyy-MM-dd" --no-videos --copy
 ```
 
 >[!TIP]
@@ -196,10 +198,10 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
   Recursively scan all subfolders within the specified source folders.
 
 - **`-nv`, `--no-video`**  
-  Exclude videos (`.mp4`, `.mov`) from scanning.
+  Exclude videos (`.mp4`, `.mov` and `.m4v`) from scanning.
   
 - **`-np`, `--no-photo`**  
-  Exclude photos (`.jpg`, `.jpeg`) from scanning.
+  Exclude photos (`.jpg` and `.jpeg`) from scanning.
 
 - **`-df <date>`, `--date-from <date>`**  
   Include only files taken after this date. Files *earlier* than this date will be ignored. You must supply the date (and optional time) in ISO 8601 format: `yyyy-mm-dd` or `yyyy-mm-dd hh:mm:ss`. If you don't provide a time then midnight will be assumed.
@@ -235,10 +237,9 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 ### Grouping logic
 
 - **`-d <number>`, `--distance <number>`**   
-  Distance threshold in kilometers. If two consecutive photos or videos are taken more than this distance apart, a new album is started. Set to `0` to disable distance-based grouping. If not supplied, the default is 50 km.
+  Distance threshold in kilometers. If two consecutive photos or videos are taken more than this distance apart, a new album is started. Set to `0` to disable distance-based grouping. If not supplied, the default is 10 km.
 
->[!TIP]
->In regions with denser settlements (e.g. the UK, much of Europe, Japan), a smaller value such as 25 km may give more meaningful results.
+  In regions where towns and landmarks are more widely spaced, a larger distance than the default 10 km may produce better album names - for example, the United States, Canada, Australia and New Zealand.
 
 - **`-t <number>`, `--time <number>`**   
   Time threshold in hours. If two consecutive photos or videos are taken more than this many hours apart, a new album is started. Set to `0` to disable time-based grouping. If not supplied, the default is 48 hours.
@@ -256,13 +257,13 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 
 
 - **`-p <number>`, `--precision <number>`**   
-  Defines how detailed the location names are when GroupMachine generates album titles. Lower numbers produces broader, more general album names (grouping photos by major cities or districts), while higher numbers produce more specific names (including neighborhoods, landmarks, and points of interest). The default is level 1 (broad).
+  Defines how detailed the location names are when GroupMachine generates album titles. Lower numbers produces broader, more general album names (grouping photos by major cities or districts), while higher numbers produce more specific names (including neighborhoods, landmarks, and points of interest). The default is level 2 (standard).
 
   |Level|Precision|Areas|Example|
   |:----|:---|:----|:------|
-  |1|Broad|Towns, cities & districts|_Paris, Versailles_|
-  |2|Standard|As broad + villages & local areas|_Le Marais, Montreuil_|
-  |3|Precise|As standard + spot features (see below)|_Place des Vosges, Sainte-Chapelle_|
+  |1|Broad|Towns, cities & districts|_Paris, Boulogne-Billancourt, and Saint-Denis_|
+  |2|Standard|As broad + villages & local areas|_Le Marais, Montmartre, and Latin Quarter_ **✅ Default**|
+  |3|Precise|As standard + spot features (see below)|_Eiffel Tower, Louvre Museum, and Notre-Dame Cathedral_|
   
   Spot features are individual landmarks, buildings, or points of interest. Level 3 (precise) includes selected spot features that are typically relevant to tourist photography:
 
@@ -276,7 +277,7 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
   The list of spot features is fixed and cannot be changed.
   
 - **`-a <format>`, `--append <format>`**  
-  Date format to append to album folder names that use locations. Useful to distinguish multiple visits to the same location. Dates are appended within brackets - e.g. using `MMM yyyy` will produce "_Paris, Le Marais, and Versailles (Apr 2025)_". Dates are defined using the [.NET DateTime format syntax](#datetime-format-syntax).
+  Date format to append to album folder names that use locations. Useful to distinguish multiple visits to the same location. Dates are appended within brackets - e.g. using `MMM yyyy` will produce "_Paris, Boulogne-Billancourt, and Saint-Denis (Apr 2025)_". Dates are defined using the [.NET DateTime format syntax](#datetime-format-syntax).
 
  - **`-nr`, `--no-range`**  
   Don't use a date range in album titles. By default, GroupMachine adds a date range (e.g. _"12 Jun 2025 – 14 Jun 2025"_, using the format defined by `-f`, `--format`) when an album spans multiple days. With this option enabled, album names always use the date of the first item in the group, even if later items fall on different days.
@@ -296,13 +297,13 @@ Below are a few examples of using the prefix option to modify album names and/or
 
 |Command|Without GeoNames|With GeoNames|Notes|
 |:------|:---------------|:------------|:----|
-|`-pa "Trip to "`|`Trip to 5 Apr 2025 - 6 Apr 2025`|`Trip to Paris, Le Marais, and Versailles`|Prefix every album.|
-|`-pa "Weekend in"`|`Weekend in5 Apr 2025 - 6 Apr 2025`|`Weekend inParis, Le Marais, and Versailles`|⚠️ **Missing trailing space causes run-on names!**|
-|`-pa "<yyyy>/"`|`2025/5 Apr 2025 - 6 Apr 2025`|`2025/Paris, Le Marais, and Versailles`|Creates a year subfolder.|
-|`-pa "<yyyy>/<MM>_"`|`2025/04_5 Apr 2025 - 6 Apr 2025`|`2025/04_Paris, Le Marais, and Versailles`|As above, but also month prefix on album name.|
-|`-pa "Year <yyyy>/<MMMM>/"`|`Year 2025/April/5 Apr 2025 - 6 Apr 2025`|`Year 2025/April/Paris, Le Marais, and Versailles`|Deeper nesting folders.|
-|`-pa "<yyyy>\<MMM>- "`|`2025\Apr- 5 Apr 2025 - 6 Apr 2025`|`2025\Apr- Paris, Le Marais, and Versailles`|Windows path seperator also supported.|
-|`-pa "<yyyy>"`|`20255 Apr 2025 - 6 Apr 2025`|`2025Paris, Le Marais, and Versailles`|⚠️ **No trailing `/` or `/` means prefix not folder.**|
+|`-pa "Trip to "`|`Trip to 5 Apr 2025 - 6 Apr 2025`|`Trip to Paris, Boulogne-Billancourt, and Saint-Denis`|Prefix every album.|
+|`-pa "Weekend in"`|`Weekend in5 Apr 2025 - 6 Apr 2025`|`Weekend inParis, Boulogne-Billancourt, and Saint-Denis`|⚠️ **Missing trailing space causes run-on names!**|
+|`-pa "<yyyy>/"`|`2025/5 Apr 2025 - 6 Apr 2025`|`2025/Paris, Boulogne-Billancourt, and Saint-Denis`|Creates a year subfolder.|
+|`-pa "<yyyy>/<MM>_"`|`2025/04_5 Apr 2025 - 6 Apr 2025`|`2025/04_Paris, Boulogne-Billancourt, and Saint-Denis`|As above, but also month prefix on album name.|
+|`-pa "Year <yyyy>/<MMMM>/"`|`Year 2025/April/5 Apr 2025 - 6 Apr 2025`|`Year 2025/April/Paris, Boulogne-Billancourt, and Saint-Denis`|Deeper nesting folders.|
+|`-pa "<yyyy>\<MMM>- "`|`2025\Apr- 5 Apr 2025 - 6 Apr 2025`|`2025\Apr- Paris, Boulogne-Billancourt, and Saint-Denis`|Windows path seperator also supported.|
+|`-pa "<yyyy>"`|`20255 Apr 2025 - 6 Apr 2025`|`2025Paris, Boulogne-Billancourt, and Saint-Denis`|⚠️ **No trailing `/` or `/` means prefix not folder.**|
 
 >[!CAUTION]
 > - If you don’t include a trailing space in your prefix, the album name will run directly after your text.  
@@ -318,8 +319,7 @@ Below are a few examples of using the prefix option to modify album names and/or
 - **`-nc`, `--no-check`**  
   Disables GitHub version checks for GroupMachine.
 
->[!NOTE]
->Version checks occur at most once every 7 days. GroupMachine connects only to [this URL](https://api.github.com/repos/mrsilver76/groupmachine/releases/latest) to retrieve version information. No data about you or your photo/video library is shared with the author or GitHub - you can verify this yourself by reviewing `GitHubVersionChecker.cs`
+  Version checks occur at most once every 7 days. GroupMachine connects only to [this URL](https://api.github.com/repos/mrsilver76/groupmachine/releases/latest) to retrieve version information. No data about you or your photo/video library is shared with the author or GitHub - you can verify this yourself by reviewing `GitHubVersionChecker.cs`
 
 - **`-s`, `--simulate`**  
   Runs all processing steps but does not copy, move or link any files. Ideal for testing and previewing changes.
@@ -396,8 +396,13 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 ## 🕰️ Version history
 
 ### 1.4.0 (xx February 2026)
-- Added support for extracting GPS metadata from videos; handles XMP, DMS, decimal and ISO 6709 formats commonly used by both iOS and Android.
+- Added support for extracting GPS metadata from videos - handles XMP, DMS, decimal and ISO 6709 formats commonly used by both iOS and Android.
+- Improved progress bar accuracy - now calculateed using bytes processed rather than files processed.
 - Tidied up formatting of progress bar for better terminal compatibility.
+- Updated default distance to 10km and default precision level to 2 for better album naming.
+- Added checks to ensure invalid GPS data is not considered.
+- Fixed a bug which meant that photos and videos were still scanned even if `-nv` and/or `-np` were used.
+- Updated documentation.
 
 ### 1.3.0 (08 October 2025)
 - Replaced `-p` (`--precise`) with new `-p` (`--precision`) to support three levels of album naming detail.
