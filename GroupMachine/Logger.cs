@@ -1,6 +1,6 @@
 ﻿/*
  * GroupMachine - Groups photos and videos into albums (folders) based on time & location changes.
- * Copyright (c) 2025 Richard Lawrence
+ * Copyright (c) 2025-2026 Richard Lawrence
  * http://github.com/mrsilver76/groupmachine/
  *
  * This program is free software: you can redistribute it and/or modify

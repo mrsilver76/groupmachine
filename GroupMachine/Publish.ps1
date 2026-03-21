@@ -1,5 +1,5 @@
 # PowerShell script to build and package a C# project for multiple architectures
-# Version 1.0.4 - 19th September 2025
+# Version 1.0.5 - 21st March 2026
 
 # === User Configurable Section ===
 
@@ -170,7 +170,7 @@ foreach ($arch in $architectures) {
 	& dotnet publish $csproj.FullName `
 		-c Release `
 		-r $arch `
-		--self-contained false `
+		--no-self-contained  `
 		/p:PublishSingleFile=true `
 		/p:PublishTrimmed=false `
 		/p:IncludeNativeLibrariesForSelfExtract=false `

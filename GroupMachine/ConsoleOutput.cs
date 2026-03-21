@@ -1,6 +1,6 @@
 ﻿/*
  * GroupMachine - Groups photos and videos into albums (folders) based on time & location changes.
- * Copyright (c) 2025 Richard Lawrence
+ * Copyright (c) 2025-2026 Richard Lawrence
  * http://github.com/mrsilver76/groupmachine/
  *
  * This program is free software: you can redistribute it and/or modify
@@ -150,7 +150,20 @@ namespace GroupMachine
             // Album format
             string sampleAlbumName;
             if (!string.IsNullOrEmpty(Globals.GeonamesDatabase))
-                sampleAlbumName = "Paris, Le Marais, and Versailles";
+            {
+                switch (Globals.LocationPrecision)
+                {
+                    case 1:
+                        sampleAlbumName = "Paris, and Versailles";
+                        break;
+                    case 2:
+                        sampleAlbumName = "Le Marais, and Montreuil";
+                        break;
+                    default:  // case 3
+                        sampleAlbumName = "Place des Vosges, and Sainte-Chapelle";
+                        break;
+                }
+            }
             else if (Globals.UseDateRange)
                 sampleAlbumName = DateTime.Now.ToString(Globals.DateFormat, CultureInfo.CurrentCulture) + " - " +
                     DateTime.Now.AddDays(3).ToString(Globals.DateFormat, CultureInfo.CurrentCulture);

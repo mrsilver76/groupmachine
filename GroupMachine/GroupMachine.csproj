@@ -13,13 +13,13 @@
 	<Description>Groups photos into albums (folders) based on time and location changes</Description>
 	<PackageProjectUrl>https://github.com/mrsilver76/groupmachine</PackageProjectUrl>
 	<RepositoryUrl>https://github.com/mrsilver76/groupmachine</RepositoryUrl>
-	<Copyright>Copyright © 2025 Richard Lawrence</Copyright>
+	<Copyright>Copyright © 2025-2026 Richard Lawrence</Copyright>
 
 	<!-- Version information -->
 	<!-- Remember major.minor.BUILD.revision! -->
-	<Version>1.3.0.0</Version>
-	<AssemblyVersion>1.3.0.0</AssemblyVersion>
-	<FileVersion>1.3.0.0</FileVersion>
+	<Version>1.4.0.0</Version>
+	<AssemblyVersion>1.4.0.0</AssemblyVersion>
+	<FileVersion>1.4.0.0</FileVersion>
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	<AnalysisLevel>latest-recommended</AnalysisLevel>
 </PropertyGroup>

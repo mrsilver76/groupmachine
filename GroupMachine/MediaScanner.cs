@@ -1,6 +1,6 @@
 ﻿/*
  * GroupMachine - Groups photos and videos into albums (folders) based on time & location changes.
- * Copyright (c) 2025 Richard Lawrence
+ * Copyright (c) 2025-2026 Richard Lawrence
  * http://github.com/mrsilver76/groupmachine/
  *
  * This program is free software: you can redistribute it and/or modify
@@ -74,15 +74,36 @@ namespace GroupMachine
                 Environment.Exit(0);
             }
 
+            // Now we have the list of files, we can work out the total size of the files to be processed,
+            // which is used for progress reporting during the copy phase
+
+            Logger.Write($"Calculating total size of files to process...");
+            long totalBytes = 0;
+            foreach (var filePath in allFiles)
+            {
+                try
+                {
+                    var fileInfo = new FileInfo(filePath);
+                    totalBytes += fileInfo.Length;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Write($"Error accessing {filePath} to calculate total size: {ex.Message}", true);
+                    // We will continue without the size of the file, which may cause the progress bar to be inaccurate,
+                    // but it's better than exiting
+                }
+            }
+            Globals.TotalFileBytesToProcess = totalBytes;
+
             // Now we have the list of files, extract metadata from each one in parallel
 
             Logger.Write($"Extracting metadata from {GrammarHelper.Pluralise(allFiles.Count, "file", "files")}...");
 
             // Setup the progress bar
 
-            ProgressBar.Total = allFiles.Count;
+            ProgressBar.Total = Globals.TotalFileBytesToProcess;
             ProgressBar.Start();
-            int completedCount = 0;
+            long completedBytes = 0;
 
             var concurrentList = new ConcurrentBag<Globals.ImageMetadata>();
            
@@ -113,8 +134,10 @@ namespace GroupMachine
                 }
                 finally
                 {
-                    Interlocked.Increment(ref completedCount);
-                    ProgressBar.Completed = completedCount;
+                    // Add the file size to the completed bytes count for the progress bar, even if there was an error
+                    long fileSize = new FileInfo(filePath).Length;
+                    Interlocked.Add(ref completedBytes, fileSize);
+                    ProgressBar.Completed = completedBytes;
                 }
             });
 
