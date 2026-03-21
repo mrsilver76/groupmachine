@@ -405,7 +405,7 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - Updated default distance to 10km and default precision level to 2 for better album naming.
 - Added checks to ensure invalid GPS data is not considered.
 - Fixed a bug which meant that photos and videos were still scanned even if `-nv` and/or `-np` were used.
-- Updated the publish script to use `--no-self-contained` as identifed by dotnet/sdk#51888.
+- Updated the publish script to use `--no-self-contained` as identified by dotnet/sdk#51888.
 - Updated documentation and copyright.
 
 ### 1.3.0 (08 October 2025)
