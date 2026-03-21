@@ -395,14 +395,15 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ## 🕰️ Version history
 
-### 1.4.0 (xx February 2026)
+### 1.4.0 (xx March 2026)
 - Added support for extracting GPS metadata from videos - handles XMP, DMS, decimal and ISO 6709 formats commonly used by both iOS and Android.
-- Improved progress bar accuracy - now calculateed using bytes processed rather than files processed.
+- Improved progress bar accuracy - now calculated using bytes processed rather than files processed.
 - Tidied up formatting of progress bar for better terminal compatibility.
 - Updated default distance to 10km and default precision level to 2 for better album naming.
 - Added checks to ensure invalid GPS data is not considered.
 - Fixed a bug which meant that photos and videos were still scanned even if `-nv` and/or `-np` were used.
-- Updated documentation.
+- Updated the publish script to use `--no-self-contained` as identifed by dotnet/sdk#51888.
+- Updated documentation and copyright.
 
 ### 1.3.0 (08 October 2025)
 - Replaced `-p` (`--precise`) with new `-p` (`--precision`) to support three levels of album naming detail.
