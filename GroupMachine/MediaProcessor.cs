@@ -50,7 +50,7 @@ namespace GroupMachine
             int success = 0, failure = 0;
 
             // Set up the progress bar
-            ProgressBar.Total = Globals.ImageMetadataList.Count;
+            ProgressBar.Total = Globals.TotalFileBytesToProcess;
             ProgressBar.Start();
 
             // Use Parallel.ForEach to process images concurrently.
@@ -74,7 +74,9 @@ namespace GroupMachine
                     (_, existing) => imageMetadata.DateCreated < existing ? imageMetadata.DateCreated : existing
                 );
 
-                ProgressBar.Completed = success + failure;
+                // Update the progress bar with the size of the processed file
+                long fileSize = new FileInfo(imageMetadata.FileName).Length;
+                ProgressBar.Completed += fileSize;
 
             });
 

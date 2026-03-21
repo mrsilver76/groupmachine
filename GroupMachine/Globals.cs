@@ -1,6 +1,6 @@
 ﻿/*
  * GroupMachine - Groups photos and videos into albums (folders) based on time & location changes.
- * Copyright (c) 2025 Richard Lawrence
+ * Copyright (c) 2025-2026 Richard Lawrence
  * http://github.com/mrsilver76/groupmachine/
  *
  * This program is free software: you can redistribute it and/or modify
@@ -102,7 +102,7 @@ namespace GroupMachine
         public static CopyMode CurrentCopyMode { get; set; } = CopyMode.Unknown;
 
         /// <summary>Maximum distance in km for grouping media into the same album.</summary>
-        public static double DistanceThreshold { get; set; } = 50.0;
+        public static double DistanceThreshold { get; set; } = 10.0;
 
         /// <summary>Maximum time in hours for grouping media into the same album.</summary>
         public static double TimeThreshold { get; set; } = 48.0;
@@ -135,7 +135,7 @@ namespace GroupMachine
         public static bool UsePartNumbers { get; set; } = true;
 
         /// <summary>Level of precision (1-3) for album names. 1 is broad, 3 is explicit.</summary>
-        public static int LocationPrecision { get; set; } = 1;
+        public static int LocationPrecision { get; set; } = 2;
 
         /// <summary>Include only media taken on or after this date.</summary>
         public static DateTime? DateTakenFrom { get; set; }
@@ -179,6 +179,9 @@ namespace GroupMachine
 
         /// <summary>Locks to prevent multiple threads writing to the same destination path simultaneously.</summary>
         public static readonly ConcurrentDictionary<string, object> PathLocks = new();
+
+        /// <summary>Total bytes of media files to process, used for progress reporting.</summary>
+        public static long TotalFileBytesToProcess { get; set; }
 
         /// <summary>
         /// Readable label of the media type being processed (photos, videos, or both).

@@ -27,9 +27,9 @@ namespace GroupMachine
         private static DateTime? _startTime;
 
         /// <summary>The total number of items to process.</summary>
-        public static int Total { get; set; }
+        public static long Total { get; set; }
         /// <summary>The number of items that have been processed.</summary>
-        public static int Completed { get; set; }
+        public static long Completed { get; set; }
 
         /// <summary>
         /// Starts the timer and initializes the progress tracking state.
@@ -91,7 +91,7 @@ namespace GroupMachine
                 int filled = (int)(pct * barWidth);
                 int empty = barWidth - filled;
 
-                string bar = "[" + new string('●', filled) + new string('○', empty) + "]";
+                string bar = "[" + new string('#', filled) + new string('.', empty) + "]";
 
                 string eta = "";
                 if (Completed >= 5 && pct >= 0.01)  // Only show ETA with enough data
@@ -124,7 +124,7 @@ namespace GroupMachine
 
             // Rounding rules
             if (remaining.TotalSeconds < 60)
-                return $"(<{Math.Ceiling(remaining.TotalSeconds / 5) * 5} secs left)";
+                return $"({Math.Ceiling(remaining.TotalSeconds / 5) * 5} secs left)";
             if (remaining.TotalMinutes < 5)
                 return $"(~{Math.Ceiling(remaining.TotalMinutes)} mins left)";
             if (remaining.TotalMinutes < 60)
