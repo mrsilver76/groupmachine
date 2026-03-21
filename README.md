@@ -398,7 +398,7 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ## 🕰️ Version history
 
-### 1.4.0 (xx March 2026)
+### 1.4.0 (21 March 2026)
 - Added support for extracting GPS metadata from videos - handles XMP, DMS, decimal and ISO 6709 formats commonly used by both iOS and Android.
 - Improved progress bar accuracy - now calculated using bytes processed rather than files processed.
 - Tidied up formatting of progress bar for better terminal compatibility.
