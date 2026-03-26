@@ -16,6 +16,8 @@ By default, the tool groups your photos and videos into albums - which are simpl
 whenever there’s a noticeable gap in time or distance between your shots (for example, different cities or days apart). This way, the folder structure
 naturally reflects your trips, events, or outings without manual sorting.
 
+If you supply a GeoNames database file (freely downloadable) then GroupMachine can rename the folders to actual place names.
+
 | ![Screenshot of file explorer showing 6 folders with names based on the location of the images and videos](./assets/files.png) |
 |-|
 
