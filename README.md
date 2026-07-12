@@ -137,42 +137,67 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 ## 🚀 Quick start guide
 
-This is the simplest way to use GroupMachine. It scans `d:\Photos` (and all sub-folders) for photo/video content and moves it into dated subfolders within `e:\My Album`. It uses the default thresholds (48 hours and 10 km) and default date format (eg `20 Jul 2025`).
+### Basic album organisation with dated folders
 
+This example organises a collection of photos and videos into dated albums. It scans `d:\Photos` and all subfolders, groups files taken within 48 hours and 10 km of each other into the same album, then moves them into dated folders under `e:\My Album`. Album names use the default date format (for example, `20 Jul 2025` or `20 Jul 2025 - 22 Jul 2025`).
+
+> [!TIP]
+> If this is your first time using GroupMachine, add `-s` to run in simulate mode. This shows what would happen without actually copying, moving or linking any files.
 ```
 GroupMachine "d:\Photos" -m -r -o "e:\My Album"
-
-GroupMachine "d:\Photos" --move --recursive --output "e:\My Album"
 ```
+Explanation of options:
 
-This is a more complicated example that uses the GeoNames database (and the `allCountries.txt`) database file for naming folders and appends the four-digit year onto the album name. Files are copied instead of moved.
+- `"d:\Photos"`: Source folder containing your photos and videos
+- `-m`: Move files into the new album structure
+- `-r`: Search subfolders recursively
+ - `-o "e:\My Album"`: Destination folder for the albums
+
+### Name albums by location using GeoNames
+
+This example uses the GeoNames `allCountries.txt` database, the complete worldwide database of places and points of interest, to name albums based on location. GroupMachine uses specific landmarks where available and falls back to broader place names when needed. The four digit year is appended to each album name, and files are copied rather than moved, leaving the originals untouched.
 
 ```
 GroupMachine "d:\Photos" -o "e:\My Album" -r -g c:\temp\allCountries.txt -a "YYYY" -c
-
-GroupMachine "d:\Photos" --output "e:\My Album" --recursive --geocode "c:\temp\allCountries.txt" --append "YYYY" --copy
 ```
+Explanation of options:
 
-This example shows how to change the thresholds (to 24 hours and 50 km), the date format of the folder names (to ISO-8601 format) and to skip looking for videos.
+- `"d:\Photos"`: Source folder containing your photos and videos
+- `-o "e:\My Album"`: Destination folder for the albums
+- `-r`: Search subfolders recursively
+- `-g c:\temp\allCountries.txt`: Use the GeoNames database for location based album names
+- `-a "YYYY"`: Append the four digit year to each album name
+- `-c`: Copy files into the new album structure, leaving the originals unchanged
+
+### Customising album grouping and output format
+
+This example shows how to customise the way GroupMachine creates albums. It changes the grouping thresholds to 24 hours and 50 km, uses ISO-8601 date formatting (`yyyy-MM-dd`) for folder names, skips video files, and creates links to files instead of copying them.
+
+Links avoid duplicating storage space by allowing multiple album folders to reference the same original files. When `-l` (`--link`) is used, GroupMachine will create hard links where possible, and automatically fall back to soft links when hard links cannot be created.
 
 ```
-GroupMachine "d:\Photos" -r -o "e:\My Album" -t 24 -d 50 -f "yyyy-MM-dd" -nv -c
-
-GroupMachine "d:\Photos" --recursive --output "e:\My Album" --time 24 --distance 50 --format "yyyy-MM-dd" --no-videos --copy
+GroupMachine "d:\Photos" -r -o "d:\My Album" -t 24 -d 50 -f "yyyy-MM-dd" -nv -c
 ```
+Explanation of options:
 
->[!TIP]
->Use `-s` (`--simulate`) to preview how your albums will be grouped - no files are moved, copied or linked, so it’s a safe way to fine-tune all your settings before committing. To better understand what’s happening during processing, check the log file (the location is shown when you run `-h` or `--help`).
+- `"d:\Photos"`: Source folder containing your photos and videos
+- `-r`: Search subfolders recursively
+- `-o "d:\My Album"`: Destination folder for the albums
+- `-t 24`: Group photos taken within 24 hours of each other
+- `-d 50`: Group photos taken within 50 km of each other
+- `-f "yyyy-MM-dd"`: Use ISO-8601 date formatting for album names
+- `-nv`: Skip video files
+- `-l`: Create hard links where possible, falling back to soft links when required
 
 ## 💻 Command line options
 
 GroupMachine is a command-line tool. Run it from a terminal or command prompt, supplying all options and arguments directly on the command line. Logs with detailed information are also written and you can find the log file location using `--help` (`-h`).
 
 ```
-GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source folder> ...]
+GroupMachine [options] -o <folder> <mode> <source> [<source> ...]
 ```
 
-### Required
+### Mandatory
 
 - **`-o <folder>`, `--output <folder>`**   
   Specifies the destination folder for grouped albums. If the folder does not exist, it will be created automatically.
@@ -180,19 +205,18 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 - **`<source folder> [<source folder> ...]`**   
   One or more folders containing the photos and videos to be grouped.
 
-- **File copy mode (choose one of the following)**  
-  One of these must be specified:
+### Mode (exactly one mandatory)
+  
+- **`-c`, `--copy`**  
+  Copy files from the source folder to the destination folder.
 
-  - **`-c`, `--copy`**  
-    Copy files from the source folder to the destination folder.
+- **`-m`, `--move`**  
+  Move files from the source folder to the destination folder.
 
-  - **`-m`, `--move`**  
-    Move files from the source folder to the destination folder.
+- **`-l`, `--link`**  
+  Link files from the source folder to the destination folder. This avoids duplicating data by creating a reference to the original file instead of copying it.
 
-  - **`-l`, `--link`**  
-    Link files from the source folder to the destination folder. This avoids duplicating data by creating a reference to the original file instead of copying it.
-
-    When used, GroupMachine first attempts to create a [hard link](https://en.wikipedia.org/wiki/Hard_link), which behaves like a real file and doesn’t depend on the original path. If hard linking fails (e.g. across different drives), it falls back to creating a [soft link](https://en.wikipedia.org/wiki/Symbolic_link) (symbolic link), which points to the source file’s path and breaks if that file is moved or deleted.
+  When used, GroupMachine first attempts to create a [hard link](https://en.wikipedia.org/wiki/Hard_link), which behaves like a real file and doesn’t depend on the original path. If hard linking fails (e.g. across different drives), it falls back to creating a [soft link](https://en.wikipedia.org/wiki/Symbolic_link) (symbolic link), which points to the source file’s path and breaks if that file is moved or deleted.
 
 >[!NOTE]
 >Files are never overwritten. If a file with the same name already exists in the destination, it is compared by content. If the files are not binary identical, a number is appended to the new file (e.g., `IMG_1234 (2).jpg`) to preserve both versions.
@@ -260,17 +284,18 @@ GroupMachine [options] -o <destination folder> -m|-c|-l <source folder> [<source
 - **`-f <format>`, `--format <format>`**   
   Date format used for album folder names that use dates. This follows the [.NET DateTime format syntax](#datetime-format-syntax). The default is `dd MMM yyyy` (e.g., _"20 Jul 2025"_). Used when no GeoNames data is provided or no location can be determined.
 
-
 - **`-p <number>`, `--precision <number>`**   
-  Defines how detailed the location names are when GroupMachine generates album titles. Lower numbers produces broader, more general album names (grouping photos by major cities or districts), while higher numbers produce more specific names (including neighborhoods, landmarks, and points of interest). The default is level 2 (standard).
+  Defines how detailed the location names are when GroupMachine generates album titles. Lower levels produce broader, more general location names, while higher levels produce more specific names, including individual landmarks and points of interest.
+
+  The default is level 3 (detailed).
 
   |Level|Precision|Areas|Example|
   |:----|:---|:----|:------|
-  |1|Broad|Towns, cities & districts|_Paris, Boulogne-Billancourt, and Saint-Denis_|
-  |2|Standard|As broad + villages & local areas|_Le Marais, Montmartre, and Latin Quarter_ **✅ Default**|
-  |3|Precise|As standard + spot features (see below)|_Eiffel Tower, Louvre Museum, and Notre-Dame Cathedral_|
-  
-  Spot features are individual landmarks, buildings, or points of interest. Level 3 (precise) includes selected spot features that are typically relevant to tourist photography:
+  |1|Broad|Major towns, cities, and administrative areas|_Paris, Boulogne-Billancourt, and Saint-Denis_|
+  |2|Standard|Broad + smaller towns, villages, and local areas|_Le Marais, Montmartre, and Latin Quarter_|
+  |3|Detailed|Standard + selected spot features|_Eiffel Tower, Louvre Museum, and Notre-Dame Cathedral_ **✅ Default**|
+ 
+  Spot features are individual landmarks, buildings, or points of interest. Level 3 includes selected spot features that are typically relevant for tourist photography:
 
   - **Cultural landmarks:** castles, monuments, palaces, temples, mosques, churches, theatres, opera houses.
   - **Historic and archaeological sites:** ruins, tombs, pyramids, historical or archaeological sites.
@@ -399,6 +424,17 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - GeoNames is a project of Unxos GmbH. This tool is not affiliated with or endorsed by Unxos GmbH.
 
 ## 🕰️ Version history
+
+### 1.5.0 (xx July 2027)
+- Improved album naming logic to favour extremely close spot features (100m or less).
+- Changed the default precision level to 3 (detailed).
+- Fixed bug that incorrectly quoted command line options in logs.
+- Fixed bug that prevented GeoNames from being used for video content only.
+- [TO DO] Updated `-s` (`--simulate`) to display useful information in the terminal instead of only writing to logs.
+- Cleaned up GroupMachine startup output formatting.
+- Updated `-h` (`--help`) to include more descriptive text and format output to the terminal width.
+- Cleaned up code and fixed compiler warnings and recommendations.
+- Improved documentation, especially around the Quick Start section.
 
 ### 1.4.0 (21 March 2026)
 - Added support for extracting GPS metadata from videos - handles XMP, DMS, decimal and ISO 6709 formats commonly used by both iOS and Android.
