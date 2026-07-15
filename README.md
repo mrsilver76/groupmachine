@@ -67,7 +67,7 @@ You can override these defaults using `-t` (`--time`) and `-d` (`--distance`).
 By default, album folders are named using date ranges reflecting when the photos or videos were taken. You can improve folder naming by using
 the [GeoNames](https://www.geonames.org/) database, which maps GPS coordinates to nearby place names.
 
-If you provide the GeoNames data, GroupMachine will look up the nearest populated place for each photo or video. It then selects up to four place names for the album title. These are chosen in the order they first appear in the group, with less frequent locations dropped if more than four are found. The result is a name that prioritises the most representative places, preserving the order of your journey.
+If you provide the GeoNames data, GroupMachine will look up suitable nearby locations for each photo or video using a prioritised search of geographic features. It then selects up to four place names for the album title. These are chosen in the order they first appear in the group, with less frequent locations dropped if more than four are found. The result is a name that prioritises the most representative places, preserving the order of your journey.
 
 For example, an album might be named "_Le Marais, Montmartre and Latin Quarter_" instead of just "_4 Apr 2025 - 7 Apr 2025_".
 
@@ -75,7 +75,20 @@ If you frequently visit the same places, you can avoid album name collisions by 
 
 To use this feature, download a GeoNames database file from [here](https://www.geonames.org/export/). You can choose `allCountries.zip` for global data or the `.zip` file for a specific country. A list of supported countries and datasets is available [here](https://www.geonames.org/datasources/) or you can go directly to the data dump [here](https://download.geonames.org/export/dump/). You'll then need to manually decompress the `.zip` file and pass the path and filename of the extracted `.txt` file to the program using `-g` or `--geocode`.
 
-Location selection balances specific landmarks with broader place names. When a well known landmark or point of interest is found within 100m, GroupMachine uses that name. Otherwise, it falls back to broader locations such as cities, districts, neighbourhoods or villages. You can adjust the level of detail with `-p` (`--precision`), choosing between broad (cities/districts), standard (neighbourhoods/villages), or precise (landmarks and points of interest).
+Location selection balances specific landmarks with broader place names to produce album names that better match how people typically describe locations. Rather than simply selecting the closest place, GroupMachine searches using a series of distance tiers, prioritising more specific locations first and only falling back to broader areas when no suitable match is found.
+
+| Distance    | Location types prioritised                                 | Example results                            |
+|:----------- |:---------------------------------------------------------- |:------------------------------------------ |
+| Up to 100m  | Spot features, landmarks and notable places                | _Eiffel Tower, Tower Bridge, Hyde Park_      |
+| Up to 1km   | Local features such as neighbourhoods and smaller areas    | _Montmartre, Le Marais, Greenwich_           |
+| Up to 10km  | Populated places                                           | _Paris, Bath, Bristol_                       |
+| Up to 100km | Larger geographic features and selected fallback locations | _Somerset, Provence-Alpes-Côte d’Azur, English Channel_ |
+
+The precision level controls which tiers are considered. The default mode (`--precision 3`) considers all tiers, starting with the most specific locations and falling back to broader areas when no suitable match is found. 
+
+Selected hydrographic features such as seas, gulfs and straits are included as a final fallback for photos and videos taken on water where no suitable land based location is available.
+
+This approach avoids naming albums after obscure nearby database entries while still allowing recognisable landmarks to be used when appropriate..
 
 >[!TIP]
 >If your photos span multiple countries, consider using the full `allCountries.txt` dataset for best results. It takes longer to load but ensures accurate results across borders.
@@ -285,16 +298,18 @@ GroupMachine [options] -o <folder> <mode> <source> [<source> ...]
   Date format used for album folder names that use dates. This follows the [.NET DateTime format syntax](#datetime-format-syntax). The default is `dd MMM yyyy` (e.g., _"20 Jul 2025"_). Used when no GeoNames data is provided or no location can be determined.
 
 - **`-p <number>`, `--precision <number>`**   
-  Defines how detailed the location names are when GroupMachine generates album titles. Lower levels produce broader, more general location names, while higher levels produce more specific names, including individual landmarks and points of interest.
+  Defines how detailed the location names are when GroupMachine generates album titles. Lower levels produce broader, more general location names, while higher levels allow more specific locations to be considered.
 
-  The default is level 3 (detailed).
+  The default is level 3 (precise).
 
-  |Level|Precision|Areas|Example|
-  |:----|:---|:----|:------|
-  |1|Broad|Major towns, cities, and administrative areas|_Paris, Boulogne-Billancourt, and Saint-Denis_|
-  |2|Standard|Broad + smaller towns, villages, and local areas|_Le Marais, Montmartre, and Latin Quarter_|
-  |3|Detailed|Standard + selected spot features|_Eiffel Tower, Louvre Museum, and Notre-Dame Cathedral_ **✅ Default**|
- 
+  | Level | Precision | Location tiers considered                                        | Example                                                     |
+  |:----- |:--------- |:---------------------------------------------------------------- |:----------------------------------------------------------- |
+  | 1     | Broad     | Larger geographic features and final fallback locations          | _Somerset, Provence-Alpes-Côte d’Azur, English Channel_       |
+  | 2     | Standard  | Local features, populated places, and broader fallback locations | _Le Marais, Montmartre, Latin Quarter_                        |
+  | 3     | Precise   | All location tiers, including spot features  **✅ Default**      | _Eiffel Tower, Louvre Museum, Notre-Dame Cathedral_ |
+
+  Higher precision levels allow GroupMachine to use more specific locations when they are available. For example, level 3 first checks for nearby spot features before falling back to local areas, towns, cities, and larger geographic features. If a more specific location cannot be found, GroupMachine continues searching using the broader location tiers available for that precision level.
+  
   Spot features are individual landmarks, buildings, or points of interest. Level 3 includes selected spot features that are typically relevant for tourist photography:
 
   - **Cultural landmarks:** castles, monuments, palaces, temples, mosques, churches, theatres, opera houses.
@@ -426,15 +441,21 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 ## 🕰️ Version history
 
 ### 1.5.0 (xx July 2027)
-- Improved album naming logic to favour extremely close spot features (100m or less).
-- Changed the default precision level to 3 (detailed).
-- Fixed bug that incorrectly quoted command line options in logs.
+
+- Significantly improved album naming by changing the GeoNames lookup logic to introduce a clearer prioritisation order. Location searches now use four distance tiers that better reflect how people typically name places - prioritising spot features within 100m, local features within 1km, populated places within 10km, and finally the nearest appropriate location within 100km.
+- Added support for selected hydrographic features such as seas, gulfs and straits as part of the final fallback, ensuring support for photos and videos taken on water.
+- Changed the default precision level to 3 (detailed) to include spot features by default.
+- Fixed a bug that incorrectly prevented videos from being grouped by location.
+- Fixed a bug that incorrectly quoted command line options in logs.
 - Fixed bug that prevented GeoNames from being used for video content only.
-- [TO DO] Updated `-s` (`--simulate`) to display useful information in the terminal instead of only writing to logs.
-- Cleaned up GroupMachine startup output formatting.
-- Updated `-h` (`--help`) to include more descriptive text and format output to the terminal width.
+- Updated `-s` (`--simulate`) to display significantly more useful information in the terminal instead of only writing details to logs.
+- Cleaned up a lot of formatting to the console.
+- Updated `-h` (`--help`) output with more descriptive command information and improved formatting to respect terminal width.
+- Significantly sped up file size scanning by running operations in parallel.
 - Cleaned up code and fixed compiler warnings and recommendations.
-- Improved documentation, especially around the Quick Start section.
+- Updated documentation, especially around the Quick Start section and location naming behaviour.
+
+
 
 ### 1.4.0 (21 March 2026)
 - Added support for extracting GPS metadata from videos - handles XMP, DMS, decimal and ISO 6709 formats commonly used by both iOS and Android.
