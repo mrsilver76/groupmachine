@@ -13,7 +13,7 @@ It’s especially useful if you’ve downloaded images from your camera, mobile 
 which often contain large, mixed sets from multiple locations and dates.
 
 By default, the tool groups your photos and videos into albums - which are simply folders containing related media files. It creates a new album
-whenever there’s a noticeable gap in time or distance between your shots (for example, different cities or days apart). This way, the folder structure
+whenever there’s a significant gap in time or location between your shots (for example, different cities or days apart). This way, the folder structure
 naturally reflects your trips, events, or outings without manual sorting.
 
 If you supply a GeoNames database file (freely downloadable) then GroupMachine can rename the folders to actual place names.
@@ -26,23 +26,16 @@ If you supply a GeoNames database file (freely downloadable) then GroupMachine c
 
 ## 🧰 Features
 
-- 💻 Runs on Windows 10 & 11, Linux (x64, ARM64, ARM32), and macOS (Intel & Apple Silicon)
-- 🖼️ Groups downloaded photos and videos into albums based on time and location.
-- 🍏 Supports Apple Live Photos, keeping the photo and video parts together.
-- 🧾 Uses photo and video metadata for the most accurate time and location (with fallback to file timestamps)
-- ⏱️ Uses a configurable time gap (default: 48 hours) to define album boundaries.
-- 📏 Uses a configurable distance gap (default: 10 km) to define album boundaries.
-- ⏳ Supports date ranges, can ignore recent photos and can resume from last processed.
-- 🗺️ Supports the GeoNames database to give album folders useful place names.
-- 📍 Fills missing or invalid GPS data by inferring locations from nearby photos taken close in time.
-- 🗓️ Enables appending of extra date text to the end of album names.
-- 🏷️ Enables prefixing of extra text, including dates and creation of folder names.
-- 🧠 Uses file hashing to detect identical files before renaming.
-- 🧪 Simulation mode to preview changes without making any modifications.
-- 🧮 Parallel processing speeds up hashing, metadata extraction, and file operations for large libraries.
-- ✂️ Copies, moves or links files to new album folders.
-- ⚙️ Automatic fallback to soft links when hard linking is not possible.
-- 📘 Logs all actions, including skipped files, errors, and final summaries.
+- 💻 Runs on Windows, Linux and macOS across x86, x64 and ARM devices.
+- 📂 Organises photos and videos into albums (folders) based on time and location.
+- 🗺️ Names albums using real-world place names with the GeoNames database.
+- 📍 Infers missing GPS locations from nearby media taken at a similar time.
+- 🍏 Keeps Apple Live Photos together as a single item.
+- 🧭 Supports configurable time, distance and location precision thresholds.
+- 📅 Customises album names with flexible date formats, prefixes and suffixes.
+- 📦 Copies, moves, links or simulates changes without modifying your originals.
+- 🧠 Detects identical files to avoid unnecessary duplicates.
+- ⏳ Supports incremental processing using date filters and resume support.
 
 ## 🧩 How does grouping work?
 
@@ -76,7 +69,7 @@ If you frequently visit the same places, you can avoid album name collisions by 
 >[!IMPORTANT]
 >**To enable geocoding, you must download a GeoNames dataset from the [GeoNames download page](https://download.geonames.org/export/dump/).** Use `allCountries.zip` for worldwide coverage (recommended) or the `.zip` file for your country. Unzip the archive and pass the resulting `.txt` file to GroupMachine using `-g` (or `--geocode`).
 
-Location selection balances specific landmarks with broader place names, aiming for album names that match how people usually describe where they were. Rather than simply picking the closest place, GroupMachine works outward through a series of distance tiers, checking for the most specific locations first and only falling back to broader areas when nothing closer is found.
+Rather than simply picking the closest place, GroupMachine works outward through a series of distance tiers, checking for the most specific locations first and only falling back to broader areas when nothing closer is found.
 
 | Distance    | Location types prioritised                                 | Example results                            |
 |:----------- |:---------------------------------------------------------- |:------------------------------------------ |
@@ -96,29 +89,37 @@ This keeps albums from being named after obscure database entries that happen to
 
 ## 📦 Download
 
-Get the latest version from https://github.com/mrsilver76/groupmachine/releases.
+Get the latest version from the [Releases page](https://github.com/mrsilver76/groupmachine/releases).
 
 Each release includes the following files (`x.x.x` denotes the version number):
 
 |Platform|Download|
 |:--------|:-----------|
 |Microsoft Windows 10 & 11|`GroupMachine-x.x.x-win-x64.exe` ✅ **Most users should choose this**|
-|Linux (64-bit Intel/AMD)|`GroupMachine-x.x.x-linux-x64`|
-|Linux (64-bit ARM), e.g. Pi 4 and newer|`GroupMachine-x.x.x-linux-arm64`|
-|Linux (32-bit ARM), e.g. Pi 3 and older|`GroupMachine-x.x.x-linux-arm`|
+|Linux (x64 Intel/AMD)|`GroupMachine-x.x.x-linux-x64`|
+|Linux (ARM64), e.g. Pi 4 and newer|`GroupMachine-x.x.x-linux-arm64`|
+|Linux (ARM32), e.g. Pi 3 and older|`GroupMachine-x.x.x-linux-arm`|
 |Docker, e.g. Synology NAS|`GroupMachine-x.x.x-linux-x64`|
-|macOS (Apple Silicon)|`GroupMachine-x.x.x-osx-arm64`|
-|macOS (Intel)|`GroupMachine-x.x.x-osx-x64`|
-|Other/Developers|Source code (zip / tar.gz)|
+|macOS (Apple Silicon ARM64)|`GroupMachine-x.x.x-osx-arm64`|
+|macOS (Intel x64)|`GroupMachine-x.x.x-osx-x64`|
+|Developers or other platforms|Source code (zip / tar.gz)|
 
-> [!TIP]
-> There is no installer for native platforms. Just download the appropriate file and run it from the command line. If you're using Docker (e.g. on Synology), setup will differ - see notes below.
+## Installation
+
+GroupMachine does not use an installer on Windows, macOS or Linux. Download the appropriate file from the table above and run it from the command line.
+
+GroupMachine requires the [.NET 8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime). Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
+
+### Windows users
+
+- Download `GroupMachine-x.x.x-win-x64.exe`.
+- No installation is required. Save the executable anywhere you like.
+- Open Command Prompt or Windows Terminal and run it from that folder.
+- If Windows SmartScreen warns that the app is unrecognised, click **More info** then **Run anyway**.
 
 ### macOS users
 
 - Download the appropriate binary for your platform (see table above).
-- Install the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime). Slightly more technical information can be found [here](https://learn.microsoft.com/en-gb/dotnet/core/install/macos).
-- ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
 - Make the downloaded file executable: `chmod +x GroupMachine-x.x.x-<your-platform>`
 - If you get `zsh: killed` when running the executable then:
   - Apply an ad-hoc code signature: `codesign --force --deep --sign - GroupMachine-x.x.x-<your-platform>`
@@ -127,25 +128,22 @@ Each release includes the following files (`x.x.x` denotes the version number):
 ### Linux users
 
 - Download the appropriate binary for your platform (see table above).
-- Install the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime). Slightly more technical pages can be found [here](https://learn.microsoft.com/en-gb/dotnet/core/install/linux).
-- ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
 - Make the downloaded file executable: `chmod +x GroupMachine-x.x.x-<your-platform>`
 
 ### Docker users
 
-- Install the [.NET 8.0 Linux runtime](https://learn.microsoft.com/en-gb/dotnet/core/install/linux) inside the container or use a [.NET container image](https://learn.microsoft.com/en-gb/dotnet/core/docker/introduction#net-images).
-- ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
 - Use the `GroupMachine-x.x.x-linux-x64` binary inside the container.
+- Install the [.NET 8.0 Linux runtime](https://learn.microsoft.com/en-gb/dotnet/core/install/linux) inside the container or use a [.NET container image](https://learn.microsoft.com/en-gb/dotnet/core/docker/introduction#net-images).
 - Mount your photo folders into the container with appropriate read and write access.
 
-### Platform testing notes
+### Platform support and testing
 
 * Tested extensively: Windows 11  
-* Tested moderately: Linux (64-bit ARM, Raspberry Pi 5 only)  
-* Not tested: Windows 10, Linux (x64), Linux (32-bit ARM), Docker, macOS (x64 & Apple Silicon)
+* Tested moderately: Linux ARM64 (Raspberry Pi 5)  
+* Not tested: Windows 10, Linux x64, Linux ARM32, Docker, macOS (Intel & Apple Silicon)
 
 >[!NOTE]
->Docker and macOS environments have not been tested, and no platform-specific guidance is available as these setups are outside the developer’s experience. While GroupMachine should work fine on them, support will be limited to questions directly related to the tool itself.
+>I do not have hands-on experience with Docker or macOS environments. GroupMachine should work, but platform-specific support will be limited.
 
 ## 🚀 Quick start guide
 
@@ -188,7 +186,7 @@ This example shows how to customise the way GroupMachine creates albums. It chan
 Links avoid duplicating storage space by allowing multiple album folders to reference the same original files. When `-l` (`--link`) is used, GroupMachine will create hard links where possible, and automatically fall back to soft links when hard links cannot be created.
 
 ```
-GroupMachine "d:\Photos" -r -o "d:\My Album" -t 24 -d 50 -f "yyyy-MM-dd" -nv -c
+GroupMachine "d:\Photos" -r -o "d:\My Album" -t 24 -d 50 -f "yyyy-MM-dd" -nv -l
 ```
 Explanation of options:
 
@@ -289,7 +287,7 @@ GroupMachine [options] -o <folder> <mode> <source> [<source> ...]
 ### Album naming
 
 - **`-g <file>`, `--geocode <file>`**   
-  Full path to a [GeoNames database file](https://www.geonames.org/export/) in `.txt` format. Providing this file enables automatic renaming of albums based on location data. You will need to manually decompress the `.zip` file provided by the GeoNames website before you can use it with GroupMachine.
+  Full path to a [GeoNames database file](https://download.geonames.org/export/dump/) in `.txt` format. Providing this file enables automatic renaming of albums based on location data. You will need to manually decompress the `.zip` file provided by the GeoNames website before you can use it with GroupMachine.
 
 >[!TIP]
 >For best performance, store the [GeoNames database file](https://www.geonames.org/export/) on a local SSD. Loading it from a network share, USB drive, or HDD can be much slower.
@@ -394,7 +392,7 @@ The `-f` (`--format`), `-a` (`--append`) and `-pa` (`--prefix-album`) options ac
 |`yyyy`|Year only|`2025`|
 |`dd-MM-yyyy`|Day-month-year with dashes|`20-07-2025`|
 
-For more detailed information, please refer to [this page](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings#:~:text=The%20following%20table%20describes%20the%20custom%20date%20and%20time%20format%20specifiers%20and%20displays%20a%20result%20string%20produced%20by%20each%20format%20specifier.) authored by Microsoft.
+For a complete list of format specifiers, see Microsoft's [Custom date and time format strings](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings#:~:text=The%20following%20table%20describes%20the%20custom%20date%20and%20time%20format%20specifiers%20and%20displays%20a%20result%20string%20produced%20by%20each%20format%20specifier.) documentation.
 
 ## 🔄 Automating downloads and album creation
 
