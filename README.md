@@ -33,7 +33,7 @@ If you supply a GeoNames database file (freely downloadable) then GroupMachine c
 - ⏱️ Uses a configurable time gap (default: 48 hours) to define album boundaries.
 - 📏 Uses a configurable distance gap (default: 10 km) to define album boundaries.
 - ⏳ Supports date ranges, can ignore recent photos and can resume from last processed.
-- 🗺️ Supports the GeoNames database to give album folders meaningful place names.
+- 🗺️ Supports the GeoNames database to give album folders useful place names.
 - 📍 Fills missing or invalid GPS data by inferring locations from nearby photos taken close in time.
 - 🗓️ Enables appending of extra date text to the end of album names.
 - 🏷️ Enables prefixing of extra text, including dates and creation of folder names.
@@ -51,7 +51,7 @@ photos or videos exceeds either the time or distance threshold, a new album is s
 
 Using the default thresholds (48 hours and 10 km) means that photos/videos taken less than 2 days apart and within 10 kilometres (or 6.2 miles) will be grouped together.
 For example, photos/videos taken during a single day trip or a weekend away will usually fall into the same album. If you then travel to a different city
-a few days later, that will create a new album. This approach is designed to reflect natural breaks in your timeline, capturing major location changes or extended time gaps.
+a few days later, that will create a new album. 
 
 Because the grouping relies on metadata timestamps and GPS coordinates, it assumes your media files include accurate time and location information.
 These assumptions generally hold true for photos and videos taken by modern smartphones and digital cameras. If the time metadata is missing or invalid, GroupMachine
@@ -73,7 +73,8 @@ For example, an album might be named "_Le Marais, Montmartre and Latin Quarter_"
 
 If you frequently visit the same places, you can avoid album name collisions by appending a date to each name using `-a` or `--append`. For instance, using `--append "MMMM yyyy"` would label your album as "_Le Marais, Montmartre and Latin Quarter (April 2025)_"
 
-To use this feature, download a GeoNames database file from [here](https://www.geonames.org/export/). You can choose `allCountries.zip` for global data or the `.zip` file for a specific country. A list of supported countries and datasets is available [here](https://www.geonames.org/datasources/) or you can go directly to the data dump [here](https://download.geonames.org/export/dump/). You'll then need to manually decompress the `.zip` file and pass the path and filename of the extracted `.txt` file to the program using `-g` or `--geocode`.
+>[!IMPORTANT]
+>**To enable geocoding, you must download a GeoNames dataset from the [GeoNames download page](https://download.geonames.org/export/dump/).** Use `allCountries.zip` for worldwide coverage (recommended) or the `.zip` file for your country. Unzip the archive and pass the resulting `.txt` file to GroupMachine using `-g` (or `--geocode`).
 
 Location selection balances specific landmarks with broader place names, aiming for album names that match how people usually describe where they were. Rather than simply picking the closest place, GroupMachine works outward through a series of distance tiers, checking for the most specific locations first and only falling back to broader areas when nothing closer is found.
 
@@ -90,10 +91,8 @@ Selected hydrographic features such as seas, gulfs and straits are included as a
 
 This keeps albums from being named after obscure database entries that happen to be nearby, while still using a recognisable landmark when one is genuinely close by.
 
->[!TIP]
->If your photos span multiple countries, consider using the full `allCountries.txt` dataset for best results. It takes longer to load but ensures accurate results worldwide. A direct link to this dataset is [here](https://download.geonames.org/export/dump/allCountries.zip) (at least 400MB)
-
-For photos and videos with missing or invalid GPS data, GroupMachine can infer their location from the nearest photo or video taken close in time (_imputing_). In practice, this means it assumes you were at the same location as the closest previous or next item with valid GPS data. This helps group media without GPS coordinates with other items from the same event or trip, but the inferred location will not reflect actual movement between shots.
+>[!NOTE]
+>If a photo or video has missing or invalid GPS data, GroupMachine can infer its location from the nearest item taken close in time (_imputing_). This helps group media from the same event or trip, but the inferred location may not reflect any movement that occurred between shots.
 
 ## 📦 Download
 
