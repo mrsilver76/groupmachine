@@ -104,7 +104,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
 |macOS (Intel x64)|`GroupMachine-x.x.x-osx-x64`|
 |Developers or other platforms|Source code (zip / tar.gz)|
 
-## Installation
+## 🛠️ Installation
 
 GroupMachine does not use an installer on Windows, macOS or Linux. Download the appropriate file from the table above and run it from the command line.
 
