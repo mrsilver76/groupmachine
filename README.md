@@ -4,7 +4,7 @@
 <img src="https://img.shields.io/github/license/mrsilver76/groupmachine?logo=gnu&logoColor=white" alt="GPL License"> <img src="https://img.shields.io/github/stars/mrsilver76/groupmachine" alt="total stars"></p>
 
 _A cross-platform command-line tool (Windows, Linux, macOS) for grouping photos and videos into albums (folders) based on time and location changes.
-It can also name these albums using real-world place names, making your collections more meaningful and easier to navigate._
+It can also name these albums using real-world place names, making them easier to browse._
 
 ## 📚 Overview
 
@@ -67,7 +67,7 @@ You can override these defaults using `-t` (`--time`) and `-d` (`--distance`).
 By default, album folders are named using date ranges reflecting when the photos or videos were taken. You can improve folder naming by using
 the [GeoNames](https://www.geonames.org/) database, which maps GPS coordinates to nearby place names.
 
-If you provide the GeoNames data, GroupMachine will look up suitable nearby locations for each photo or video using a prioritised search of geographic features. It then selects up to four place names for the album title. These are chosen in the order they first appear in the group, with less frequent locations dropped if more than four are found. The result is a name that prioritises the most representative places, preserving the order of your journey.
+If you provide the GeoNames data, GroupMachine will look up suitable nearby locations for each photo or video using a prioritised search of geographic features. It then selects up to four place names for the album title. These are chosen in the order they first appear in the group, with less frequent locations dropped if more than four are found. The result is a name that prioritises the most representative places, kept in the order you visited them.
 
 For example, an album might be named "_Le Marais, Montmartre and Latin Quarter_" instead of just "_4 Apr 2025 - 7 Apr 2025_".
 
@@ -75,7 +75,7 @@ If you frequently visit the same places, you can avoid album name collisions by 
 
 To use this feature, download a GeoNames database file from [here](https://www.geonames.org/export/). You can choose `allCountries.zip` for global data or the `.zip` file for a specific country. A list of supported countries and datasets is available [here](https://www.geonames.org/datasources/) or you can go directly to the data dump [here](https://download.geonames.org/export/dump/). You'll then need to manually decompress the `.zip` file and pass the path and filename of the extracted `.txt` file to the program using `-g` or `--geocode`.
 
-Location selection balances specific landmarks with broader place names to produce album names that better match how people typically describe locations. Rather than simply selecting the closest place, GroupMachine searches using a series of distance tiers, prioritising more specific locations first and only falling back to broader areas when no suitable match is found.
+Location selection balances specific landmarks with broader place names, aiming for album names that match how people usually describe where they were. Rather than simply picking the closest place, GroupMachine works outward through a series of distance tiers, checking for the most specific locations first and only falling back to broader areas when nothing closer is found.
 
 | Distance    | Location types prioritised                                 | Example results                            |
 |:----------- |:---------------------------------------------------------- |:------------------------------------------ |
@@ -88,10 +88,10 @@ The precision level controls which tiers are considered. The default mode (`--pr
 
 Selected hydrographic features such as seas, gulfs and straits are included as a final fallback for photos and videos taken on water where no suitable land based location is available.
 
-This approach avoids naming albums after obscure nearby database entries while still allowing recognisable landmarks to be used when appropriate..
+This keeps albums from being named after obscure database entries that happen to be nearby, while still using a recognisable landmark when one is genuinely close by.
 
 >[!TIP]
->If your photos span multiple countries, consider using the full `allCountries.txt` dataset for best results. It takes longer to load but ensures accurate results across borders.
+>If your photos span multiple countries, consider using the full `allCountries.txt` dataset for best results. It takes longer to load but ensures accurate results worldwide. A direct link to this dataset is [here](https://download.geonames.org/export/dump/allCountries.zip) (at least 400MB)
 
 For photos and videos with missing or invalid GPS data, GroupMachine can infer their location from the nearest photo or video taken close in time (_imputing_). In practice, this means it assumes you were at the same location as the closest previous or next item with valid GPS data. This helps group media without GPS coordinates with other items from the same event or trip, but the inferred location will not reflect actual movement between shots.
 
@@ -155,7 +155,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
 This example organises a collection of photos and videos into dated albums. It scans `d:\Photos` and all subfolders, groups files taken within 48 hours and 10 km of each other into the same album, then moves them into dated folders under `e:\My Album`. Album names use the default date format (for example, `20 Jul 2025` or `20 Jul 2025 - 22 Jul 2025`).
 
 > [!TIP]
-> If this is your first time using GroupMachine, add `-s` to run in simulate mode. This shows what would happen without actually copying, moving or linking any files.
+> If this is your first time using GroupMachine, use `-s` (instead of `-c`, `-m` or `-l`) to run in simulate mode. This shows what would happen without actually copying, moving or linking any files.
 ```
 GroupMachine "d:\Photos" -m -r -o "e:\My Album"
 ```
@@ -227,12 +227,13 @@ GroupMachine [options] -o <folder> <mode> <source> [<source> ...]
   Move files from the source folder to the destination folder.
 
 - **`-l`, `--link`**  
-  Link files from the source folder to the destination folder. This avoids duplicating data by creating a reference to the original file instead of copying it.
+  Link files from the source folder to the destination folder. This avoids duplicating content by creating a reference to the original file instead of copying it. GroupMachine first attempts to create a [hard link](https://en.wikipedia.org/wiki/Hard_link), which behaves like a real file and doesn’t depend on the original path. If that fails (e.g. across different drives), it falls back to creating a [soft link](https://en.wikipedia.org/wiki/Symbolic_link) (symbolic link), which points to the original file and breaks if that file is moved or deleted.
 
-  When used, GroupMachine first attempts to create a [hard link](https://en.wikipedia.org/wiki/Hard_link), which behaves like a real file and doesn’t depend on the original path. If hard linking fails (e.g. across different drives), it falls back to creating a [soft link](https://en.wikipedia.org/wiki/Symbolic_link) (symbolic link), which points to the source file’s path and breaks if that file is moved or deleted.
+- **`-s`, `--simulate`**  
+  Runs all processing steps and outputs a report explaining what would happen. No files are copied, moved or linked. This is ideal for testing and previewing changes.
 
 >[!NOTE]
->Files are never overwritten. If a file with the same name already exists in the destination, it is compared by content. If the files are not binary identical, a number is appended to the new file (e.g., `IMG_1234 (2).jpg`) to preserve both versions.
+>Files are _never_ overwritten. If a file with the same name already exists in the destination, it is compared by content. If the files are not binary identical, a number is appended to the new file (e.g., `IMG_1234 (2).jpg`) to preserve both versions.
 
 ### File selection
 
@@ -365,9 +366,6 @@ Below are a few examples of using the prefix option to modify album names and/or
   Disables GitHub version checks for GroupMachine.
 
   Version checks occur at most once every 7 days. GroupMachine connects only to [this URL](https://api.github.com/repos/mrsilver76/groupmachine/releases/latest) to retrieve version information. No data about you or your photo/video library is shared with the author or GitHub - you can verify this yourself by reviewing `GitHubVersionChecker.cs`
-
-- **`-s`, `--simulate`**  
-  Runs all processing steps but does not copy, move or link any files. Ideal for testing and previewing changes.
 
 - **`-ha <type>`, `--hash-algo <type>`**  
   Select the hashing algorithm for duplicate detection. By default, GroupMachine uses CRC64-ECMA-FAST, a very fast 64-bit checksum that reads only the first 64 KiB of each file. This is extremely efficient for spotting duplicates in large collections. You can override this with:
