@@ -440,6 +440,9 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - Significantly improved album naming by changing the GeoNames lookup logic to introduce a clearer prioritisation order. Location searches now use four distance tiers that better reflect how people typically name places - prioritising spot features within 100m, local features within 1km, populated places within 10km, and finally the nearest appropriate location within 100km.
 - Added support for selected hydrographic features such as seas, gulfs and straits as part of the final fallback, ensuring support for photos and videos taken on water.
 - Changed the default precision level to 3 (detailed) to include spot features by default.
+- Added support for processing HEIC, HEIF and AVIF images.
+- Improved album date accuracy by checking additional EXIF and QuickTime metadata fields.
+- Upgraded MetadataExtractor package from 2.8.1 to 2.9.3.
 - Fixed a bug that incorrectly prevented videos from being grouped by location.
 - Fixed a bug that incorrectly quoted command line options in logs.
 - Fixed bug that prevented GeoNames from being used for video content only.
@@ -449,8 +452,6 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - Significantly sped up file size scanning by running operations in parallel.
 - Cleaned up code and fixed compiler warnings and recommendations.
 - Updated documentation, especially around the Quick Start section and location naming behaviour.
-
-
 
 ### 1.4.0 (21 March 2026)
 - Added support for extracting GPS metadata from videos - handles XMP, DMS, decimal and ISO 6709 formats commonly used by both iOS and Android.
