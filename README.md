@@ -1,7 +1,7 @@
-# GroupMachine
+# <img src="https://raw.githubusercontent.com/mrsilver76/groupmachine/refs/heads/main/GroupMachine/GroupMachine.ico" width="48" height="48"> GroupMachine
 
-<p><img src="https://img.shields.io/badge/Windows-supported-0078D6?logo=windows&logoColor=white" alt="Windows"> <img src="https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=black" alt="Linux"> <img src="https://img.shields.io/badge/macOS-supported-000000?logo=apple&logoColor=white" alt="macOS"> <img src="https://img.shields.io/badge/.NET-C%23-512BD4?logo=dotnet&logoColor=white" alt=".NET/C#"> 
-<img src="https://img.shields.io/github/license/mrsilver76/groupmachine?logo=gnu&logoColor=white" alt="GPL License"> <img src="https://img.shields.io/github/stars/mrsilver76/groupmachine" alt="total stars"></p>
+<p><img src="https://img.shields.io/badge/Windows-supported-0078D6?logo=windows&logoColor=white" alt="Windows"> <img src="https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=black" alt="Linux"> <img src="https://img.shields.io/badge/macOS-supported-000000?logo=apple&logoColor=white" alt="macOS"> <img src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white" alt=".NET 8"> 
+<img src="https://img.shields.io/github/license/mrsilver76/groupmachine?logo=gnu&logoColor=white" alt="GPL License"> <img src="https://img.shields.io/github/v/release/mrsilver76/groupmachine" alt="Latest release"> <img src="https://img.shields.io/github/stars/mrsilver76/groupmachine" alt="total stars"></p>
 
 _A cross-platform command-line tool (Windows, Linux, macOS) for grouping photos and videos into albums (folders) based on time and location changes.
 It can also name these albums using real-world place names, making them easier to browse._
