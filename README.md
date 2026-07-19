@@ -437,6 +437,7 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ### 1.5.0 (xx July 2027)
 
+- Optimised GeoNames location loading by filtering unnecessary data before processing. This has dramatically reduced memory usage and improved performance, especially for large photo and video collections.
 - Significantly improved album naming by changing the GeoNames lookup logic to introduce a clearer prioritisation order. Location searches now use four distance tiers that better reflect how people typically name places - prioritising spot features within 100m, local features within 1km, populated places within 10km, and finally the nearest appropriate location within 100km.
 - Added support for selected hydrographic features such as seas, gulfs and straits as part of the final fallback, ensuring support for photos and videos taken on water.
 - Changed the default precision level to 3 (detailed) to include spot features by default.
