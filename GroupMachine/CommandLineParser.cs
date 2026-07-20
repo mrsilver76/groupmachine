@@ -26,8 +26,6 @@ namespace GroupMachine
     /// </summary>
     internal sealed class CommandLineParser
     {
-        public static List<string> ParsedFlags = [];
-
         /// <summary>
         /// Parses the command line arguments
         /// </summary>
@@ -42,11 +40,13 @@ namespace GroupMachine
                 string arg = args[i].ToLower(CultureInfo.InvariantCulture);
 
                 if (arg == "-m" || arg == "--move")
-                    Globals.CurrentCopyMode = Globals.CopyMode.Move;
+                    SetOperationMode(Globals.OperationMode.Move);
                 else if (arg == "-c" || arg == "--copy")
-                    Globals.CurrentCopyMode = Globals.CopyMode.Copy;
+                    SetOperationMode(Globals.OperationMode.Copy);
                 else if (arg == "-l" || arg == "--link")
-                    Globals.CurrentCopyMode = Globals.CopyMode.HardSoftLink;
+                    SetOperationMode(Globals.OperationMode.HardSoftLink);
+                else if (arg == "-s" || arg == "--simulate" || arg == "--simulation")
+                    SetOperationMode(Globals.OperationMode.Simulation);
                 else if (arg == "-p" || arg == "--precision")
                 {
                     if (int.TryParse(args[i+1], out int precision) && precision >= 1 && precision <= 3)
@@ -58,22 +58,11 @@ namespace GroupMachine
                         ConsoleOutput.ShowUsage("Invalid value for location precision (must be 1,2 or 3)");
                 }
                 else if (arg == "-r" || arg == "--recursive")
-                {
                     Globals.ScanRecursive = true;
-                    ParsedFlags.Add("Recursive");
-                }
-                else if (arg == "-s" || arg == "--simulate")
-                    Globals.TestMode = true;
                 else if (arg == "-nr" || arg == "--no-range")
-                {
                     Globals.UseDateRange = false;
-                    ParsedFlags.Add("No-range");
-                }
                 else if (arg == "-np" || arg == "--no-part" || arg == "--no-parts")
-                {
                     Globals.UsePartNumbers = false;
-                    ParsedFlags.Add("No-part");
-                }
                 else if ((arg == "-d" || arg == "--distance") && i + 1 < args.Length)
                 {
                     if (double.TryParse(args[i + 1], out double distance))
@@ -115,7 +104,6 @@ namespace GroupMachine
                 {
                     Globals.GeonamesDatabase = args[i + 1];
                     i++; // Skip next argument
-                    ParsedFlags.Add("Geocode");
                 }
                 else if ((arg == "-o" || arg == "--output") && i + 1 < args.Length)
                 {
@@ -123,20 +111,11 @@ namespace GroupMachine
                     i++; // Skip next argument
                 }
                 else if (arg == "-nv" || arg == "--no-video" || arg == "--no-videos")
-                {
                     Globals.NoVideos = true;
-                    ParsedFlags.Add("No-video");
-                }
                 else if (arg == "-np" || arg == "--no-photo" || arg == "--no-photos")
-                {
                     Globals.NoPhotos = true;
-                    ParsedFlags.Add("No-photo");
-                }
                 else if (arg == "-xr" || arg == "--exclude-recent")
-                {
                     Globals.ExcludeRecent = true;
-                    ParsedFlags.Add("Exclude-recent");
-                }
                 else if (arg == "-df" || arg == "--date-from" && i + 1 < args.Length)
                 {
                     if (DateHelper.TryParseDateArg(args[i + 1], out var parsedDate))
@@ -159,25 +138,18 @@ namespace GroupMachine
                     i++; // Skip next argument
                 }
                 else if (arg == "-nc" || arg == "--no-check")
-                {
                     Globals.GitHubVersionCheck = false;
-                    ParsedFlags.Add("No-check");
-                }
                 else if (arg == "-u" || arg == "--unique")
-                {
                     Globals.AvoidExistingFolders = true;
-                    ParsedFlags.Add("Unique");
-                }
                 else if (arg == "-mp" || arg == "--max-parallel" && i + 1 < args.Length)
                 {
                     if (int.TryParse(args[i + 1], out int procs))
                     {
                         Globals.MaxParallel = procs;
                         i++; // Skip next argument
-                        ParsedFlags.Add($"Max-parallel={procs}");
                     }
                 }
-                else if (arg == "-ha" || arg == "--hash" || arg =="--hash-algo" || arg == "--hash-algorithm")
+                else if (arg == "-ha" || arg == "--hash" || arg == "--hash-algo" || arg == "--hash-algorithm")
                 {
                     Globals.DuplicateCheckMode = Hashing.TryParseHashMode(args[i+1]);
                     i++; // Skip next argument
@@ -205,6 +177,13 @@ namespace GroupMachine
             CreateDestinationFolder();
         }
 
+        private static void SetOperationMode(Globals.OperationMode operationMode)
+        {
+            if (Globals.CurrentOperationMode != Globals.OperationMode.Unknown && Globals.CurrentOperationMode != operationMode)
+                ConsoleOutput.ShowUsage("Conflicting operation modes specified. Please choose only one of: -c, -m, -l or -s.");
+            Globals.CurrentOperationMode = operationMode;
+        }
+
         /// <summary>
         /// Validates the parsed command line arguments and shows usage information if any are invalid.
         /// </summary>
@@ -220,10 +199,10 @@ namespace GroupMachine
             if (Globals.SourceFolders.Count == 0)
                 ConsoleOutput.ShowUsage("No source folders specified. Please provide at least one source folder.");
 
-            // Check that a copy mode is specified
+            // Check that an operation mode is specified
 
-            if (Globals.CurrentCopyMode == Globals.CopyMode.Unknown)
-                ConsoleOutput.ShowUsage("No copy mode specified. Use -m, -c, or -l to specify how files should be handled.");
+            if (Globals.CurrentOperationMode == Globals.OperationMode.Unknown)
+                ConsoleOutput.ShowUsage("An operation mode is required. Please use one of: -m, -c, -l or -s.");
 
             // Check that every source folder exists and is not the same as the destination folder
 
@@ -250,12 +229,6 @@ namespace GroupMachine
 
             if (!string.IsNullOrEmpty(Globals.GeonamesDatabase) && !File.Exists(Globals.GeonamesDatabase))
                 ConsoleOutput.ShowUsage($"GeoNames data file '{Globals.GeonamesDatabase}' does not exist.");
-
-            // Check that if the user isn't trying to group only videos by location. Since
-            // videos have no location data, this is not possible.
-
-            if (Globals.NoPhotos && Globals.TimeThreshold == 0)
-                ConsoleOutput.ShowUsage("It is not possible to group videos by location.");
 
             // If the user has specified an append format, they must also specify a GeoNames database
 

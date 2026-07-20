@@ -41,12 +41,9 @@ namespace GroupMachine
         /// </summary>
         public static void ProcessMedia()
         {
+            Logger.Write($"{Globals.CopyModeText} to new albums...");
+
             ConcurrentDictionary<string, DateTime> albumDates = new();
-
-            string prefix = Globals.TestMode ? $"Not {Globals.CopyModeText.ToLower(CultureInfo.CurrentCulture)}" : Globals.CopyModeText;
-            string msg = $"{prefix} files to new albums{(Globals.TestMode ? " (test mode)" : "")}...";
-            Logger.Write(msg);
-
             int success = 0, failure = 0;
 
             // Set up the progress bar
@@ -90,8 +87,6 @@ namespace GroupMachine
             Logger.Write($"Setting album folder dates to match {Globals.MediaLabel}...");
             foreach (var album in albumDates)
             {
-                if (Globals.TestMode) continue;
-
                 try
                 {
                     System.IO.Directory.SetCreationTime(album.Key, album.Value);
@@ -119,6 +114,12 @@ namespace GroupMachine
         /// <returns></returns>
         public static bool CreateAlbumFolders()
         {
+            // Never allow this to happen if we are in test mode
+            if (Globals.CurrentOperationMode == Globals.OperationMode.Simulation)
+                return true;
+
+            // Get unique album names so that folders can be created for them
+
             var albumPaths = Globals.ImageMetadataList
                 .Select(meta => meta.AlbumName)
                 .Where(name => !string.IsNullOrWhiteSpace(name))
@@ -128,12 +129,6 @@ namespace GroupMachine
 
             foreach (var albumPath in albumPaths)
             {
-                if (Globals.TestMode)
-                {
-                    Logger.Write($"[Test] Album folder -> {albumPath}");
-                    continue;
-                }
-
                 if (!System.IO.Directory.Exists(albumPath))
                 {
                     try
@@ -161,6 +156,10 @@ namespace GroupMachine
         /// 
         private static bool CopyOrMoveFileWithUniqueName(string sourceFilePath, string destinationFilePath)
         {
+            // Never allow this to happen if we are in test mode
+            if (Globals.CurrentOperationMode == Globals.OperationMode.Simulation)
+                return true;
+
             string directory = Path.GetDirectoryName(destinationFilePath) ?? ".";
             string name = Path.GetFileNameWithoutExtension(destinationFilePath);
             string ext = Path.GetExtension(destinationFilePath);
@@ -187,20 +186,17 @@ namespace GroupMachine
 
                 Logger.Write($"{Globals.CopyModeText} {sourceFilePath} -> {Path.GetRelativePath(Path.GetDirectoryName(sourceFilePath) ?? ".", candidatePath)}", true);
 
-                if (Globals.TestMode)
-                    return true;
-
                 try
                 {
-                    switch (Globals.CurrentCopyMode)
+                    switch (Globals.CurrentOperationMode)
                     {
-                        case Globals.CopyMode.Copy:
+                        case Globals.OperationMode.Copy:
                             File.Copy(sourceFilePath, candidatePath);
                             break;
-                        case Globals.CopyMode.Move:
+                        case Globals.OperationMode.Move:
                             File.Move(sourceFilePath, candidatePath);
                             break;
-                        case Globals.CopyMode.HardSoftLink:
+                        case Globals.OperationMode.HardSoftLink:
                             CreateHardLinkCrossPlatform(sourceFilePath, candidatePath);
                             break;
                     }
@@ -279,6 +275,36 @@ namespace GroupMachine
                 throw;
             }
         }
+
+        /// <summary>
+        /// Output to the console and logs a simulation of the albums that would be created and the files
+        /// that would be moved, copied or linked into them, without actually performing any file operations.
+        /// </summary>
+        public static void LogSimulationPreview()
+        {
+            var albums = Globals.ImageMetadataList
+                .GroupBy(x => x.AlbumName)
+                .OrderBy(x => x.Key)
+                .ToList();
+
+            Logger.Write("-------------- Simulation preview: albums and files --------------");
+            Logger.Write($"Found {GrammarHelper.Pluralise(Globals.ImageMetadataList.Count, "file", "files")} grouped into {GrammarHelper.Pluralise(albums.Count, "album", "albums")}.");
+
+            foreach (var album in albums)
+            {
+                Logger.Write("");
+                Logger.Write($"Album: \"{album.Key}\" ({GrammarHelper.Pluralise(album.Count(), "file", "files")})");
+
+                foreach (var file in album)
+                {
+                    //string destination = Path.Combine(album.Key, Path.GetFileName(file.FileName));
+                    Logger.Write($"  {file.FileName} → {Path.GetFileName(file.FileName)}");
+                }
+            }
+            Logger.Write("-------------- Simulation complete: no changes made --------------");
+            Logger.Write($"Full details in: {Logger.LogFilePath}");
+        }
+
 
     }
 }

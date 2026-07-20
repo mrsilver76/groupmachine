@@ -31,6 +31,8 @@ namespace GroupMachine
         private static bool _initialised;
         private static readonly object _lock = new();
 
+        public static string? LogFilePath { get; private set; }  // Path to the current log file
+
         /// <summary>
         /// Initialise the logger with the specified log folder path. This will create the folder if it doesn't exist,
         /// open today's log file, and delete log files older than 14 days.
@@ -57,9 +59,9 @@ namespace GroupMachine
                 }
 
                 string logFileName = $"log-{DateTime.Now:yyyy-MM-dd}.log";
-                string logFilePath = Path.Combine(logFolderPath, logFileName);
+                LogFilePath = Path.Combine(logFolderPath, logFileName);
 
-                _writer = new StreamWriter(new FileStream(logFilePath, FileMode.Append, FileAccess.Write, FileShare.Read))
+                _writer = new StreamWriter(new FileStream(LogFilePath, FileMode.Append, FileAccess.Write, FileShare.Read))
                 {
                     AutoFlush = true
                 };
@@ -85,10 +87,12 @@ namespace GroupMachine
         }
 
         /// <summary>
-        /// Write a message to the log file and console with a timestamp.
+        /// Writes a message to the log file and optionally to the console. The message is timestamped with the current date and time.
         /// </summary>
-        /// <param name="message">The message to log</param>
-        public static void Write(string message, bool verbose = false)
+        /// <param name="message">The message text to be logged.</param>
+        /// <param name="logOnly"><see langword="true"/> to skip the console and write to the log file only; <see langword="false"/> to output to both.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the log file stream is unavailable or uninitialized.</exception>
+        public static void Write(string message, bool logOnly = false)
         {
             lock (_lock)
             {
@@ -100,7 +104,7 @@ namespace GroupMachine
                 string logEntry = $"[{tsDate} {tsTime}] {message}";
 
                 _writer.WriteLine(logEntry);
-                if (!verbose)
+                if (!logOnly)
                     Console.WriteLine($"[{tsTime}] {message}");
             }
         }
@@ -116,11 +120,8 @@ namespace GroupMachine
 
             lock (_lock)
             {
-                if (_writer != null)
-                {
-                    _writer.Dispose();
-                    _writer = null;
-                }
+                _writer?.Dispose();
+                _writer = null;
                 _initialised = false;
             }
         }

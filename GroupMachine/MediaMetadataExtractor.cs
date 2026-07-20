@@ -34,8 +34,13 @@ namespace GroupMachine
     /// creation dates and GPS locations from media files, as well as generating album names based on location data. It
     /// supports both photo and video files and handles fallback scenarios when metadata is incomplete or
     /// unavailable.</remarks>
-    internal sealed class MediaMetadataExtractor
+    internal sealed partial class MediaMetadataExtractor
     {
+        /// <summary>A set of file extensions that will be examined and grouped</summary>
+        private static readonly HashSet<string> PhotoExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".heic", ".heif", ".avif" };
+        /// <summary>A set of video extensions that will be examined and grouped</summary>
+        private static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase) { ".mp4", ".mov", ".m4v" };
+
         /// <summary>
         /// Given a list of metadata directories (inside a file), extracts the date and time the content was created.
         /// If no date is found in the metadata, it falls back to the file's creation or last write time.
@@ -47,44 +52,49 @@ namespace GroupMachine
         {
             DateTime? dateTime = null;
 
-            // Try EXIF metadata for photos (JPEG)
+            // Try EXIF metadata for photos
 
             var subIfd = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
-            if (subIfd?.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out DateTime exifDateTime) == true)
+            if (subIfd != null)
             {
-                dateTime = exifDateTime;
-            }
-            else
-            {
-                // Try QuickTime metadata for videos (MP4/MOV)
-
-                // Look for TagCreated
-                var qtMovie = directories.OfType<QuickTimeMovieHeaderDirectory>().FirstOrDefault();
-                if (qtMovie != null && qtMovie.TryGetDateTime(QuickTimeMovieHeaderDirectory.TagCreated, out DateTime dtMovie))
+                // Check for DateTimeOriginal, DateTimeDigitized, and DateTime tags in that order
+                foreach (var tag in new[] { ExifDirectoryBase.TagDateTimeOriginal, ExifDirectoryBase.TagDateTimeDigitized, ExifDirectoryBase.TagDateTime })
                 {
-                    dateTime = dtMovie;
-                }
-
-                // Look for TagCreationDate
-                if (!dateTime.HasValue)
-                {
-                    var qtMeta = directories.OfType<QuickTimeMetadataHeaderDirectory>().FirstOrDefault();
-                    if (qtMeta != null && qtMeta.TryGetDateTime(QuickTimeMetadataHeaderDirectory.TagCreationDate, out DateTime dtMeta))
+                    if (subIfd.TryGetDateTime(tag, out DateTime exifDateTime))
                     {
-                        dateTime = dtMeta;
+                        dateTime = exifDateTime;
+                        break;
                     }
-
                 }
-
-                // Give up and use file creation or last write time
-                if (!dateTime.HasValue)
-                    dateTime = GetFallbackTimestamp(filePath);
             }
 
-            // If we have a valid date, set it in the metadata
+            // Try QuickTime metadata for videos, specifically TagCreationDate
 
-            if (dateTime.HasValue)
-                metadata.DateCreated = dateTime.Value;
+            if (!dateTime.HasValue)
+            {
+                var qtMeta = directories.OfType<QuickTimeMetadataHeaderDirectory>().FirstOrDefault();
+                if (qtMeta?.TryGetDateTime(QuickTimeMetadataHeaderDirectory.TagCreationDate, out DateTime qtCreationDate) == true)
+                {
+                    dateTime = qtCreationDate;
+                }
+            }
+
+            // Try QuickTime TagCreated instead
+
+            if (!dateTime.HasValue)
+            {
+                var qtMovie = directories.OfType<QuickTimeMovieHeaderDirectory>().FirstOrDefault();
+                if (qtMovie?.TryGetDateTime(QuickTimeMovieHeaderDirectory.TagCreated, out DateTime qtCreated) == true)
+                {
+                    dateTime = qtCreated;
+                }
+            }
+
+            // Last resort, use the file's creation or last write time if no metadata date was found
+
+            dateTime ??= GetFallbackTimestamp(filePath);
+
+            metadata.DateCreated = dateTime.Value;
         }
 
         /// <summary>
@@ -108,17 +118,13 @@ namespace GroupMachine
             // Get EXIF GPS
 
             var gpsDirectory = directories.OfType<GpsDirectory>().FirstOrDefault();
-            if (gpsDirectory != null)
+            if (gpsDirectory != null && gpsDirectory.TryGetGeoLocation(out var location))
             {
-                var location = gpsDirectory.GetGeoLocation();
-                if (location != null && !location.IsZero)
+                if (IsValidLatitudeLongitude(location.Latitude, location.Longitude))
                 {
-                    if (IsValidLatitudeLongitude(location.Latitude, location.Longitude))
-                    {
-                        metadata.Latitude = location.Latitude;
-                        metadata.Longitude = location.Longitude;
-                        return;
-                    }
+                    metadata.Latitude = location.Latitude;
+                    metadata.Longitude = location.Longitude;
+                    return;
                 }
             }
 
@@ -224,7 +230,7 @@ namespace GroupMachine
 
             // ISO 6709: +lat+lon or -lat-lon
 
-            var iso6709 = Regex.Match(input, @"([+-]\d{1,2}(?:\.\d+)?)\s*,?\s*([+-]\d{1,3}(?:\.\d+)?)");
+            var iso6709 = Iso6709().Match(input);
             if (iso6709.Success)
             {
                 if (double.TryParse(iso6709.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out latitude) &&
@@ -232,9 +238,9 @@ namespace GroupMachine
                     return true;
             }
 
-            // Decimal with hemisphere letters eg: 40.6892N 74.0445W
+            // Decimal degrees with hemisphere letters, e.g. 40.6892 N 74.0445 W
 
-            var hemiMatch = Regex.Match(input, @"(-?\d{1,2}(?:\.\d+)?)\s*([NS])[, ]+\s*(-?\d{1,3}(?:\.\d+)?)\s*([EW])", RegexOptions.IgnoreCase);
+            var hemiMatch = DecimalWithHemisphere().Match(input);
             if (hemiMatch.Success)
             {
                 if (double.TryParse(hemiMatch.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out latitude) &&
@@ -248,7 +254,7 @@ namespace GroupMachine
 
             // DM style eg: 40,41.355N, 74,2.67E
 
-            var dmMatches = Regex.Matches(input, @"(\d{1,3}),(\d{1,2}(?:\.\d+)?)\s*([NSEW])", RegexOptions.IgnoreCase);
+            var dmMatches = DegreesDecimalMinutes().Matches(input);
             double? lat = null;
             double? lon = null;
             foreach (Match m in dmMatches)
@@ -274,7 +280,7 @@ namespace GroupMachine
 
             // Full DMS eg: 40 deg 41' 21.30" N, 74 deg 2' 40.20" E
 
-            var dmsMatches = Regex.Matches(input, @"(\d{1,3})\s*deg\s*(\d{1,2})'\s*(\d{1,2}(?:\.\d+)?)""\s*([NSEW])", RegexOptions.IgnoreCase);
+            var dmsMatches = DegreesMinutesSeconds().Matches(input);
             lat = null;
             lon = null;
             foreach (Match m in dmsMatches)
@@ -309,12 +315,15 @@ namespace GroupMachine
         /// <param name="metadata"></param>
         public static void EnrichLocation(Globals.ImageMetadata metadata)
         {
+            // Technically (0,0) is a valid coordinate in the Gulf of Guinea, but since it's unlikely that
+            // anyone will take a photo there, we'll treat it as the value for "no location data".
             if (metadata.Latitude != 0 && metadata.Longitude != 0 && Globals.GeoNamesLookup != null)
             {
                 try
                 {
                     var place = Globals.GeoNamesLookup.FindNearest(metadata.Latitude, metadata.Longitude);
-                    metadata.LocationName = place?.Name;
+                    if (place != null)
+                        metadata.LocationName = place?.Name;
                 }
                 catch (Exception ex)
                 {
@@ -341,19 +350,21 @@ namespace GroupMachine
         /// <summary>
         /// Returns whether the file is a media file (photo or video) that we are interested in based on its extension.
         /// </summary>
-        /// <remarks>This function is not very efficient but hasn't been optimised as the filter lists are small.</remarks>
-        /// <param name="filePath"></param>
+        /// <param name="filePath">The path to the file to check.</param>
         /// <returns></returns>
         public static bool IsMediaFile(string filePath)
         {
             string ext = Path.GetExtension(filePath);
 
-            if (!Globals.NoPhotos && (ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase) || ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase)))
+            // Only return true if we are not excluding photos and the extension is in the photo list
+            if (!Globals.NoPhotos && PhotoExtensions.Contains(ext))
                 return true;
 
-            if (!Globals.NoVideos && (ext.Equals(".mp4", StringComparison.OrdinalIgnoreCase) || ext.Equals(".mov", StringComparison.OrdinalIgnoreCase) || ext.Equals(".m4v", StringComparison.OrdinalIgnoreCase)))
+            // Only return true if we are not excluding videos and the extension is in the video list
+            if (!Globals.NoVideos && VideoExtensions.Contains(ext))
                 return true;
 
+            // We aren't interested in this file type
             return false;
         }
 
@@ -419,7 +430,7 @@ namespace GroupMachine
         /// from the nearest previous or next item with valid GPS within the time threshold
         /// defined by Globals.TimeThreshold. Items without a nearby anchor remain at (0,0).
         /// </summary>
-        public static void ImputateMissingLocationData()
+        public static void ImputeMissingLocationData()
         {
             if (Globals.DistanceThreshold == 0)
                 return;  // Distance threshold is zero, so skip imputation
@@ -429,7 +440,7 @@ namespace GroupMachine
             if (count == 0)
                 return;  // No missing/invalid GPS data, nothing to do
 
-            Logger.Write($"Imputating missing/invalid GPS data for {GrammarHelper.Pluralise(count, "file", "files")}...");
+            Logger.Write($"Inferring missing/invalid GPS data for {GrammarHelper.Pluralise(count, "file", "files")}...");
 
             TimeSpan threshold = TimeSpan.FromHours(Globals.TimeThreshold);
 
@@ -547,5 +558,19 @@ namespace GroupMachine
                     && longitude >= -180 && longitude <= 180
                     && !(latitude == 0 && longitude == 0);
         }
+
+        // Regular expressions for matching lat/long within video content
+
+        [GeneratedRegex(@"([+-]\d{1,2}(?:\.\d+)?)\s*,?\s*([+-]\d{1,3}(?:\.\d+)?)")]
+        private static partial Regex Iso6709();
+
+        [GeneratedRegex(@"(-?\d{1,2}(?:\.\d+)?)\s*([NS])[, ]+\s*(-?\d{1,3}(?:\.\d+)?)\s*([EW])", RegexOptions.IgnoreCase, "en-GB")]
+        private static partial Regex DecimalWithHemisphere();
+
+        [GeneratedRegex(@"(\d{1,3}),(\d{1,2}(?:\.\d+)?)\s*([NSEW])", RegexOptions.IgnoreCase, "en-GB")]
+        private static partial Regex DegreesDecimalMinutes();
+
+        [GeneratedRegex(@"(\d{1,3})\s*deg\s*(\d{1,2})'\s*(\d{1,2}(?:\.\d+)?)""\s*([NSEW])", RegexOptions.IgnoreCase, "en-GB")]
+        private static partial Regex DegreesMinutesSeconds();
     }
 }

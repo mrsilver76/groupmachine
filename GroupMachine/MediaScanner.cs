@@ -30,16 +30,9 @@ namespace GroupMachine
     {
         /// <summary>
         /// Scans the specified source folders for media files, extracts their metadata, and filters the results based
-        /// on the configured criteria.
+        /// on the configured criteria. We don't enrich the location data here, as that is done at a later stage after
+        /// the geonames database has been loaded.
         /// </summary>
-        /// <remarks>This method searches for media files in the folders specified by <see
-        /// cref="Globals.SourceFolders"/>. The search can be recursive or limited to top-level directories,  depending
-        /// on the value of <see cref="Globals.ScanRecursive"/>. Metadata is extracted from each file, including date
-        /// and location information, and the results are filtered  based on the configured date range (<see
-        /// cref="Globals.DateTakenFrom"/> and <see cref="Globals.DateTakenTo"/>). <para> Duplicate files are removed
-        /// from the results, and any files without valid location data are counted and reported. The extracted metadata
-        /// is stored in  <see cref="Globals.ImageMetadataList"/> for further processing. </para> <para> If no media
-        /// files are found or if none match the specified criteria, the application will terminate. </para></remarks>
         public static void ScanFolders()
         {
             SearchOption searchOption = Globals.ScanRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
@@ -70,7 +63,10 @@ namespace GroupMachine
 
             if (allFiles.Count == 0)
             {
-                Logger.Write($"No {Globals.MediaLabel} found in the specified source folders.");
+                if (Globals.ScanRecursive)
+                    Logger.Write($"No {Globals.MediaLabel} found in the source folders.");
+                else
+                    Logger.Write($"No {Globals.MediaLabel} found in the source folders. Did you forget -r (--recursive)?");
                 Environment.Exit(0);
             }
 
@@ -79,12 +75,13 @@ namespace GroupMachine
 
             Logger.Write($"Calculating total size of files to process...");
             long totalBytes = 0;
-            foreach (var filePath in allFiles)
+
+            Parallel.ForEach(allFiles, filePath =>
             {
                 try
                 {
                     var fileInfo = new FileInfo(filePath);
-                    totalBytes += fileInfo.Length;
+                    Interlocked.Add(ref totalBytes, fileInfo.Length);
                 }
                 catch (Exception ex)
                 {
@@ -92,7 +89,8 @@ namespace GroupMachine
                     // We will continue without the size of the file, which may cause the progress bar to be inaccurate,
                     // but it's better than exiting
                 }
-            }
+            });
+
             Globals.TotalFileBytesToProcess = totalBytes;
 
             // Now we have the list of files, extract metadata from each one in parallel
@@ -123,9 +121,6 @@ namespace GroupMachine
                         return;
 
                     MediaMetadataExtractor.ExtractLocation(directories, metadata);
-                    MediaMetadataExtractor.EnrichLocation(metadata);
-
-                    Logger.Write($"Metadata from {Path.GetFileName(filePath)}: Date={metadata.DateCreated}, Location=({metadata.Latitude}, {metadata.Longitude}), Name={metadata.LocationName}", true);
                     concurrentList.Add(metadata);
                 }
                 catch (Exception ex)
@@ -149,15 +144,27 @@ namespace GroupMachine
             // Sort the list by date taken. This can be done later on, but it's easier to
             // understand what is going on in the logs if done now.
             Globals.ImageMetadataList.Sort((x, y) => x.DateCreated.CompareTo(y.DateCreated));
+        }
 
-            // Report how many files were found during the scan
-            if (Globals.ImageMetadataList.Count > 0)
-                Logger.Write($"Found {GrammarHelper.Pluralise(Globals.ImageMetadataList.Count, "media file", "media files")} to process.");
-            else
+        /// <summary>
+        /// Enriches the location data for each media file in the ImageMetadataList by looking up
+        /// the location name based on the latitude and longitude.
+        /// </summary>
+        public static void EnrichLocations()
+        {
+            Logger.Write("Enriching locations...");
+
+            Parallel.ForEach(Globals.ImageMetadataList, metadata =>
             {
-                Logger.Write($"No {Globals.MediaLabel} found matching the specified criteria. Finishing.");
-                Environment.Exit(0);
-            }
+                MediaMetadataExtractor.EnrichLocation(metadata);
+
+                Logger.Write(
+                    $"Metadata from {Path.GetFileName(metadata.FileName)}: " +
+                    $"Date={metadata.DateCreated}, " +
+                    $"Location=({metadata.Latitude}, {metadata.Longitude}), " +
+                    $"Name={metadata.LocationName}",
+                    true);
+            });
         }
     }
 }

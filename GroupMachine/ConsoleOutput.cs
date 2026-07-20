@@ -17,10 +17,8 @@
  * along with this Options.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-using System.Globalization;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
-using static GroupMachine.Globals;
+using System.Text;
 
 namespace GroupMachine
 {
@@ -36,59 +34,17 @@ namespace GroupMachine
         /// <param name="errorMessage">Error message to display</param>
         public static void ShowUsage(string errorMessage = "")
         {
-            Console.WriteLine($"Usage: {System.Diagnostics.Process.GetCurrentProcess().ProcessName} [options] -o <dest> -m|-c|-l <src> [<src> ...]\n" +
+            Console.WriteLine($"Usage: {System.Diagnostics.Process.GetCurrentProcess().ProcessName} [options] -o <folder> <mode> <source> [<source> ...]\n" +
                                 $"Groups photos and videos into albums (folders) based on time & location.\n");
 
             if (string.IsNullOrEmpty(errorMessage))
                 Console.WriteLine($"This is version {VersionHelper.OutputVersion(Globals.ProgramVersion)}, copyright © 2025-{DateTime.Now.Year} Richard Lawrence.\n" +
-                                    "Gallery icons created by Freepik - Flaticon (https://www.flaticon.com/free-icons/gallery)\n");
+                                    "Gallery icons created by Freepik - Flaticon (https://www.flaticon.com/free-icons/gallery)\n" +
+                                    "https://github.com/mrsilver76/groupmachine\n");
 
-            Console.WriteLine("Options:\n" +
-                                    "   -o, --output <folder>       Destination folder for albums (required).\n" +
-                                    "   -m, --move                  Move files (one of -m/-c/-l required)\n" +
-                                    "   -c, --copy                  Copy files (one of -m/-c/-l required)\n" +
-                                    "   -l, --link                  Hard/soft link (one of -m/-c/-l required)\n\n" +
-                                    "  File selection:\n" +
-                                    "   -r, --recursive             Include subfolders.\n" +
-                                    "   -nv, --no-video             Exclude videos.\n" +
-                                    "   -np, --no-photo             Exclude photos.\n" +
-                                    "   -df, --date-from <date>     Include files after this date.\n" +
-                                    "                                ISO 8601: yyyy-mm-dd or yyyy-mm-dd hh:mm:ss\n" +
-                                    "                                Use \"last\" to continue from previous file.\n" +
-                                    "   -dt, --date-to <date>       Include files on or before this date.\n" +
-                                    "                                ISO 8601: yyyy-mm-dd or yyyy-mm-dd hh:mm:ss\n" +
-                                    "                                Use \"last\" to continue from previous file.\n" +
-                                    "   -xr, --exclude-recent       Exclude files within the -t threshold from now.\n\n" +
-                                    "  Grouping logic:\n" +
-                                    "   -d, --distance              Distance in km (default: 50). 0 disables.\n" +
-                                    "   -t, --time                  Time in hours (default: 48). 0 disables.\n\n" +
-                                    "  Album naming:\n" +
-                                    "   -g, --geocode <file>        GeoNames data file; if missing, dates used.\n" +
-                                    "   -f, --format                Album date format (default: dd MMM yyyy).\n" +
-                                    "                                Example: \"yyyy-MM-dd\" → 2025-07-15\n" +
-                                    "   -p, --precision <num>       Location name precision (1-3, default: 1).\n" +
-                                    "                                1=broad (towns/cities & districts)\n" +
-                                    "                                2=standard (as broad + villages & local areas)\n" +
-                                    "                                3=precise (as standard + spot features)\n" +
-                                    "   -a, --append                Append date format to geolocated albums.\n" +
-                                    "                                Example: \"MMMM YYYY\" → July 2025\n" +
-                                    "   -nr, --no-range             Disable date ranges; album names will use only\n" +
-                                    "   -nr, --no-range              the first item's date.\n" +
-                                    "   -np, --no-part              Don't use part numbers; multiple groups on the\n" +
-                                    "                                same day stay in one album.\n" +
-                                    "   -pa, --prefix-album <text>  Prefix for album folder names. Use / for\n" +
-                                    "                                subfolders and <yyyy>, <MM>, <dd> etc. for date.\n" +
-                                    "   -u, --unique                Ensure album names do not match existing folders\n" +
-                                    "                                (adds (1), (2), ... if needed)\n\n" +
-                                    "  Others:\n" +
-                                    "   -nc, --no-check             Don't check GitHub for later versions.\n" +
-                                    "   -ha, --hash-algo <type>     Hash algorithm for duplicate file checking.\n" +
-                                    "                                Options: crc, md5, sha (default: crc).\n" +
-                                    "   -mp, --max-parallel <num>   Limit parallel copy, move or link operations.\n" +
-                                   $"                                Default: {CommandLineParser.CalculateTasks(true)} for local, {CommandLineParser.CalculateTasks(false)} for network.\n" +
-                                    "   -s, --simulate              Test mode; no files moved, copied, or linked.\n" +
-                                    "   /?, -h, --help              Show this help.\n\n" +
-                                    $"Logs are stored in {Path.Combine(Globals.AppDataPath, "Logs")}");
+            PrintOptionsWithDescriptions();
+
+            Console.WriteLine($"Logs are stored in {Path.Combine(Globals.AppDataPath, "Logs")}");
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
@@ -100,173 +56,221 @@ namespace GroupMachine
         }
 
         /// <summary>
-        /// Displays the header information for the application, including version, copyright, and grouping mode.
+        /// Outputs the command line options and their descriptions in a formatted manner, grouped by sections.
         /// </summary>
-        /// 
-        public static void ShowHeader(string[] args)
+        static void PrintOptionsWithDescriptions()
         {
-            Console.WriteLine(new string('-', 70));
-            WriteLeftRight(
-                $"\x1b[1;33mGroupMachine v{VersionHelper.OutputVersion(Globals.ProgramVersion)}\x1b[0m",
-                $"Copyright © 2025-{DateTime.Now.Year} Richard Lawrence"
-            );
-            Console.WriteLine("\x1b[3mGroups photos and videos into albums based on time & location.\x1b[0m");
-            WriteLeftRight("GNU GPL v2 or later", "https://github.com/mrsilver76/groupmachine");
-            Console.WriteLine(new string('-', 70));
+            // Define sections and their options + descriptions
+            var sections = new Dictionary<string, (string option, string description)[]>
+            {
+                ["Mandatory"] =
+                [
+                    ("<source>", "One or more source directories to scan for photos and videos. Use multiple directories to process more than one location."),
+                    ("-o, --output <folder>", "Destination folder where generated albums will be created. The folder will be created if it does not already exist."),
+                ],
+                
+                ["Mode (exactly one mandatory)"] =
+                [
+                    ("-m, --move", "Move files into the generated album folders."),
+                    ("-c, --copy", "Copy files into the generated album folders."),
+                    ("-l, --link", "Create hard or symbolic links into the generated album folders."),
+                    ("-s, --simulate", "Run in test mode and output a report. No files will be moved, copied, or linked.")
+                ],
 
-            // Prepare titles + content
+                ["File selection"] =
+                [
+                    ("-r, --recursive", "Include files from subfolders when scanning input directories."),
+                    ("-nv, --no-video", "Exclude video files from processing."),
+                    ("-np, --no-photo", "Exclude photo files from processing."),
+                    ("-df, --date-from <date>", "Only include files taken on or after this date. Supports ISO 8601 dates in the format 'yyyy-MM-dd' or 'yyyy-MM-dd HH:mm:ss'. Use \"last\" to continue from the previous run."),
+                    ("-dt, --date-to <date>", "Only include files taken before this date. Supports ISO 8601 dates in the format 'yyyy-MM-dd' or 'yyyy-MM-dd HH:mm:ss'. Use \"last\" to continue from the previous run."),
+                    ("-xr, --exclude-recent", "Exclude files where the date taken is within the configured time threshold from the current date.")
+                ],
+
+                ["Grouping logic"] =
+                [
+                    ("-d, --distance <km>", "Maximum distance between files before starting a new album. Default is 10 km. Set to 0 to disable distance-based grouping."),
+                    ("-t, --time <hours>", "Maximum time between files before starting a new album. Default is 48 hours. Set to 0 to disable time-based grouping.")
+                ],
+
+                ["Album naming"] =
+                [
+                    ("-g, --geocode <file>", "Use the supplied GeoNames data file to generate location-based album names. If unavailable, albums will use dates only."),
+                    ("-f, --format <format>", "Date format used in album names. Default is \"dd MMM yyyy\". Example: \"yyyy-MM-dd\" produces names such as \"2025-07-15\"."),
+                    ("-p, --precision <num>", "Location name precision from 1 to 3. Default is 3. 1 uses broad locations such as towns, cities, and districts. 2 includes villages and local areas. 3 includes precise spot features such as landmarks."),
+                    ("-a, --append", "Append the specified date format to geolocated album names. Example: \"MMMM yyyy\" appends \"July 2025\"."),
+                    ("-nr, --no-range", "Disable date ranges in album names. Albums will use only the first item's date instead of showing a start and end date."),
+                    ("-np, --no-part", "Disable part numbers. Multiple groups created on the same day will remain in a single album name rather than adding part suffixes."),
+                    ("-pa, --prefix-album <text>", "Add a prefix to album folder names. Use / to create subfolders and placeholders such as <yyyy>, <MM>, and <dd> for date values."),
+                    ("-u, --unique", "Ensure album folder names do not match existing folders by adding a numeric suffix such as (1), (2), and so on.")
+                ],
+
+                ["Miscellaneous"] =
+                [
+                    ("-nc, --no-check", "Do not check GitHub for newer versions of GroupMachine."),
+                    ("-ha, --hash-algo <type>", "Hash algorithm used for duplicate file detection. Options are crc, md5, and sha. Default is crc."),
+                    ("-mp, --max-parallel <num>", $"Maximum number of parallel copy, move, or link operations. Default is {CommandLineParser.CalculateTasks(true)} for local storage and {CommandLineParser.CalculateTasks(false)} for network storage."),
+                    ("/?, -h, --help", "Display this help message and exit.")
+                ]
+            };
+
+            // Determine max line width (at least 50 chars, or console width - 5)
+            int maxLineWidth = Math.Max(Console.WindowWidth, 50) - 5;
+
+            // Find max option length across all sections for consistent column width
+            int firstColWidth = 0;
+            foreach (var section in sections.Values)
+                foreach (var (option, _) in section)
+                    firstColWidth = Math.Max(firstColWidth, option.Length);
+            firstColWidth += 2; // 2-character gap
+
+            // Print each section followed by the options
+            foreach (var (header, options) in sections)
+            {
+                // Section header
+                Console.WriteLine(header + ":");
+
+                // Each option + description
+                foreach (var (option, description) in options)
+                {
+                    // Wrap description
+                    var wrapped = WrapText(description, maxLineWidth - firstColWidth - 1); // -1 for extra indent
+                    bool firstLine = true;
+
+                    foreach (var line in wrapped)
+                    {
+                        if (firstLine)
+                        {
+                            // first line: 1-char indent + option + description
+                            Console.WriteLine(" " + option.PadRight(firstColWidth) + line);
+                            firstLine = false;
+                        }
+                        else
+                        {
+                            // wrapped lines: 1-char indent + firstColWidth spaces + 1 space + text
+                            Console.WriteLine(new string(' ', firstColWidth + 2) + line);
+                        }
+                    }
+                }
+
+                Console.WriteLine(); // single newline between sections
+            }
+
+        }
+
+        /// <summary>
+        /// Given a block of text and a maximum line width, yields lines of text wrapped at word boundaries.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="maxWidth"></param>
+        /// <returns></returns>
+        private static IEnumerable<string> WrapText(string text, int maxWidth)
+        {
+            var words = text.Split(' ');
+            var line = new StringBuilder();
+
+            foreach (var word in words)
+            {
+                if (line.Length + word.Length + (line.Length > 0 ? 1 : 0) > maxWidth)
+                {
+                    yield return line.ToString();
+                    line.Clear();
+                }
+
+                if (line.Length > 0) line.Append(' ');
+                line.Append(word);
+            }
+
+            if (line.Length > 0) yield return line.ToString();
+        }
+
+
+        /// <summary>
+        /// Show the header information, including program version, copyright, source and destination folders,
+        /// grouping mode, operation mode, and optional date filters.
+        /// </summary>
+        public static void ShowHeader()
+        {
+            string line = new('─', 70);
+
+            Console.WriteLine(line);
+            Console.WriteLine($"GroupMachine {VersionHelper.OutputVersion(Globals.ProgramVersion)}");
+            Console.WriteLine($"Copyright © 2025-{DateTime.Now.Year} Richard Lawrence");
+            Console.WriteLine("https://github.com/mrsilver76/groupmachine");
+            Console.WriteLine();
+
             var items = new List<(string Title, string Value)>();
 
             // Source folders
             if (Globals.SourceFolders.Count == 1)
-                items.Add(("Source:", Globals.SourceFolders[0]));
+                items.Add(("Source", Globals.SourceFolders[0]));
             else if (Globals.SourceFolders.Count > 1)
             {
-                items.Add(("Sources:", Globals.SourceFolders[0]));
+                items.Add(("Sources", Globals.SourceFolders[0]));
                 foreach (var folder in Globals.SourceFolders.Skip(1))
-                    items.Add(("", folder)); // continuation lines
+                    items.Add(("", folder));
             }
+
+            // Destination
+            items.Add(("Destination", Globals.DestinationFolder));
 
             // Grouping mode
             bool timeEnabled = Globals.TimeThreshold > 0;
             bool distEnabled = Globals.DistanceThreshold > 0;
+
+            string grouping = "";
+
             if (timeEnabled && distEnabled)
-                items.Add(("Grouping mode:",
-                    $"Time ({Globals.TimeThreshold:F2} hr) or distance ({Globals.DistanceThreshold:F1} km/{Globals.DistanceThreshold * 0.621371:F2} mi)"));
+                grouping = $"Time ({Globals.TimeThreshold:F0} hr) or distance ({Globals.DistanceThreshold:F0} km / {Globals.DistanceThreshold * 0.621371:F2} mi)";
             else if (timeEnabled)
-                items.Add(("Grouping mode:", $"Time ({Globals.TimeThreshold:F2} hr)"));
+                grouping = $"Time ({Globals.TimeThreshold:F0} hr)";
             else if (distEnabled)
-                items.Add(("Grouping mode:", $"Distance ({Globals.DistanceThreshold:F1} km/{Globals.DistanceThreshold * 0.621371:F2} mi)"));
+                grouping = $"Distance ({Globals.DistanceThreshold:F0} km / {Globals.DistanceThreshold * 0.621371:F2} mi)";
 
-            // Date filter
-            if (Globals.DateTakenFrom.HasValue && Globals.DateTakenTo.HasValue)
-                items.Add(("Date filter:",
-                    $"{Globals.DateTakenFrom.Value:dd MMM yyyy HH:mm:ss} to {Globals.DateTakenTo.Value:dd MMM yyyy HH:mm:ss}"));
-            else if (Globals.DateTakenFrom.HasValue)
-                items.Add(("Date filter:", $"After {Globals.DateTakenFrom.Value:dd MMM yyyy HH:mm:ss}"));
-            else if (Globals.DateTakenTo.HasValue)
-                items.Add(("Date filter:", $"Before {Globals.DateTakenTo.Value:dd MMM yyyy HH:mm:ss}"));
+            if (!string.IsNullOrEmpty(grouping))
+                items.Add(("Grouping", grouping));
 
-            // Album format
-            string sampleAlbumName;
-            if (!string.IsNullOrEmpty(Globals.GeonamesDatabase))
+            // Operation mode
+            string mode = Globals.CurrentOperationMode switch
             {
-                switch (Globals.LocationPrecision)
-                {
-                    case 1:
-                        sampleAlbumName = "Paris, and Versailles";
-                        break;
-                    case 2:
-                        sampleAlbumName = "Le Marais, and Montreuil";
-                        break;
-                    default:  // case 3
-                        sampleAlbumName = "Place des Vosges, and Sainte-Chapelle";
-                        break;
-                }
-            }
-            else if (Globals.UseDateRange)
-                sampleAlbumName = DateTime.Now.ToString(Globals.DateFormat, CultureInfo.CurrentCulture) + " - " +
-                    DateTime.Now.AddDays(3).ToString(Globals.DateFormat, CultureInfo.CurrentCulture);
-            else
-                sampleAlbumName = DateTime.Now.ToString(Globals.DateFormat, CultureInfo.CurrentCulture);
-
-            if (!string.IsNullOrEmpty(Globals.AlbumPrefix))
-                sampleAlbumName = DateHelper.ApplyTemplate(Globals.AlbumPrefix, DateTime.Now, sampleAlbumName);
-            if (!string.IsNullOrEmpty(Globals.AppendFormat))
-                sampleAlbumName += $" ({DateTime.Now.ToString(Globals.AppendFormat, CultureInfo.CurrentCulture)})";
-
-            items.Add(("Album preview:", $"\u001b[3m\"{sampleAlbumName}\"\u001b[0m"));
-
-            // Copy mode
-            string copyMode = Globals.TestMode ? "Simulation (no files copied, moved or linked)"
-                : Globals.CurrentCopyMode == CopyMode.Copy ? "Copy"
-                : Globals.CurrentCopyMode == CopyMode.Move ? "Move"
-                : Globals.CurrentCopyMode == CopyMode.HardSoftLink ? "Link"
-                : "Unknown";
-            items.Add(("Copy mode:", copyMode));
-
-            // Duplicate handling
-            string dupMode = Globals.DuplicateCheckMode switch
-            {
-                HashMode.CRC => "CRC64-ECMA-FAST (64 KiB prefix only)",
-                HashMode.MD5 => "MD5",
-                HashMode.SHA => RuntimeInformation.ProcessArchitecture switch
-                {
-                    Architecture.X64 or Architecture.Arm64 => "SHA-512 (for 64-bit systems)",
-                    _ => "SHA-256 (for 32-bit systems)"
-                },
+                Globals.OperationMode.Copy => "Copy",
+                Globals.OperationMode.Move => "Move",
+                Globals.OperationMode.HardSoftLink => "Link",
+                Globals.OperationMode.Simulation => "Simulation",
                 _ => "Unknown"
             };
-            items.Add(("Duplicate check:", dupMode));
 
-            // Flags
-            if (CommandLineParser.ParsedFlags.Count > 0)
-                items.Add(("Other flags:", string.Join(", ", CommandLineParser.ParsedFlags)));
+            items.Add(("Operation mode", mode));
 
-            // Geonames database location
-            if (!string.IsNullOrEmpty(Globals.GeonamesDatabase))
-            {
-                items.Add(("GeoNames dbase:", Globals.GeonamesDatabase));
-                if (Globals.LocationPrecision == 1)
-                    items.Add(("Location precision:", "1. Broad (towns/cities & districts)"));
-                else if (Globals.LocationPrecision == 2)
-                    items.Add(("Location precision:", "2. Standard (as broad + villages & local areas)"));
-                else if (Globals.LocationPrecision == 3)
-                    items.Add(("Location precision:", "3. Precise (as standard + spot features)"));
-            }
+            // Optional date filter
+            if (Globals.DateTakenFrom.HasValue && Globals.DateTakenTo.HasValue)
+                items.Add(("Date filter", $"{Globals.DateTakenFrom.Value:dd MMM yyyy HH:mm:ss} to {Globals.DateTakenTo.Value:dd MMM yyyy HH:mm:ss}"));
+            else if (Globals.DateTakenFrom.HasValue)
+                items.Add(("Date filter", $"After {Globals.DateTakenFrom.Value:dd MMM yyyy HH:mm:ss}"));
+            else if (Globals.DateTakenTo.HasValue)
+                items.Add(("Date filter", $"Before {Globals.DateTakenTo.Value:dd MMM yyyy HH:mm:ss}"));
 
-            // Destination
-            items.Add(("Destination:", Globals.DestinationFolder));
+            // Now output the items in a nicely formatted way
 
-            // Find longest title length
-            int pad = items.Max(i => i.Title.Length) + 2;
+            int pad = items.Max(i => i.Title.Length) + 4;
 
-            // Print everything
             foreach (var (title, value) in items)
                 Console.WriteLine($"{title.PadRight(pad)}{value}");
 
-            Console.WriteLine(new string('-', 70));
+            Console.WriteLine(line);
             Console.WriteLine();
 
-            // Log environment info
-            LogEnvironmentInfo(args);
+            LogEnvironmentInfo();
 
-            // Warn if date format may be ambiguous
             if (DateHelper.IsAmbiguousDateFormat(Globals.DateFormat))
                 Logger.Write($"Warning: The date format '{Globals.DateFormat}' may be too minimal or ambiguous for album names.");
-        }
-
-        /// <summary>
-        /// Writes two strings, one aligned to the left and the other to the right, within a specified total width.
-        /// </summary>
-        /// <remarks>If the combined visible length of the <paramref name="left"/> and <paramref
-        /// name="right"/> strings  exceeds the <paramref name="totalWidth"/>, the strings are written directly next to
-        /// each other  with a single space in between. ANSI escape sequences (e.g., for text formatting) are ignored 
-        /// when calculating the visible length of the strings.</remarks>
-        /// <param name="left">The string to be displayed on the left side of the output.</param>
-        /// <param name="right">The string to be displayed on the right side of the output.</param>
-        /// <param name="totalWidth">The total width of the output, including both strings and any padding between them.  Defaults to 70 if not
-        /// specified.</param>
-        public static void WriteLeftRight(string left, string right, int totalWidth = 70)
-        {
-            // Regex to remove ANSI escape sequences
-            string ansiRegex = @"\x1B\[[0-9;]*m";
-
-            int visibleLeftLength = Regex.Replace(left, ansiRegex, "").Length;
-            int visibleRightLength = Regex.Replace(right, ansiRegex, "").Length;
-
-            if (visibleLeftLength + visibleRightLength >= totalWidth)
-                Console.WriteLine(left + " " + right);
-            else
-                Console.WriteLine(left + new string(' ', totalWidth - visibleLeftLength - visibleRightLength) + right);
         }
 
         /// <summary>
         /// Output to the logs the environment information, such as .NET version, OS and architecture.
         /// Also includes the parsed command line arguments if any were provided.
         /// </summary>
-        /// <param name="args"></param>
-        private static void LogEnvironmentInfo(string[] args)
+        private static void LogEnvironmentInfo()
         {
             var dotnet = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
             var os = System.Runtime.InteropServices.RuntimeInformation.OSDescription.Trim();
@@ -275,8 +279,7 @@ namespace GroupMachine
 
             Logger.Write($"Running {VersionHelper.OutputVersion(Globals.ProgramVersion)} on {dotnet} ({os}, {archName})", true);
 
-            if (args.Length > 0)
-                Logger.Write($"Parsed arguments: {string.Join(" ", args)}", true);
+            Logger.Write($"Command line: {Environment.CommandLine}", true);
         }
 
         /// <summary>
@@ -295,7 +298,7 @@ namespace GroupMachine
             {
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.Write($"  ℹ️ A new version ({VersionHelper.OutputVersion(result.LatestVersion)}) is available!");
+                Console.WriteLine($"  ℹ️ A new version ({VersionHelper.OutputVersion(result.LatestVersion)}) is available!");
                 Console.ResetColor();
                 Console.WriteLine($" You are using {VersionHelper.OutputVersion(Globals.ProgramVersion)}");
                 Console.WriteLine($"     Get it from https://www.github.com/{gitRepo}/");

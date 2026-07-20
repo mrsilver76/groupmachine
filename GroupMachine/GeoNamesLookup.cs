@@ -33,6 +33,8 @@ namespace GroupMachine
         private static readonly HashSet<string> AdminFeatureCodes = ["ADM3", "ADM4"];  // Administrative features we care about
         private static readonly GeometryFactory _geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);  // WGS84 coordinate system
 
+        private static readonly STRtree<Coordinate> _photoTree = new();  // Spatial index for photo locations to filder out geonames places
+
         /// <summary>
         /// Represents a geographic place with coordinates, population, and feature info.
         /// </summary>
@@ -61,9 +63,6 @@ namespace GroupMachine
 
             /// <summary>Feature code (e.g. "S.CSTL" for castle, "P.PPL" for populated place)</summary>
             public string? FeatureCode { get; init; }
-
-            /// <summary>Geometric point representation of the place location</summary>
-            public NetTopologySuite.Geometries.Point? Location { get; init; }
         }
 
         // Feature codes for different levels of places. These will be used to prioritise which place to use when multiple are found nearby
@@ -71,6 +70,7 @@ namespace GroupMachine
         private static readonly HashSet<string> Level1PlaceCodes = new(StringComparer.OrdinalIgnoreCase) { "PPLC", "PPLA", "PPLA2", "PPL" };
         private static readonly HashSet<string> Level1AdminCodes = new(StringComparer.OrdinalIgnoreCase) { "ADM2", "ADM3" };
         private static readonly HashSet<string> Level2AdminCodes = new(StringComparer.OrdinalIgnoreCase) { "ADM3", "ADM4" };
+        private static readonly HashSet<string> FallbackAdminCodes = new(StringComparer.OrdinalIgnoreCase) { "PCLI" };
 
         /// <summary>
         /// A set of feature codes that are considered relevant for tourist spots and would typcally be used in the name of an album or photo collection.
@@ -119,6 +119,17 @@ namespace GroupMachine
         ];
 
         /// <summary>
+        /// A set of feature codes that are considered relevant for hydrographic features, such as seas, gulfs and straits.
+        /// </summary>
+
+        private static readonly HashSet<string> AllowedHydrographicFeatures =
+        [
+            "SEA",       // sea
+            "GULF",      // gulf
+            "STRAIT"     // strait
+        ];
+
+        /// <summary>
         /// Loads a GeoNames database from the specified file and populates the spatial index with relevant places.
         /// </summary>
         /// <remarks>This method reads the specified file line by line, parses the data, and filters out
@@ -128,6 +139,10 @@ namespace GroupMachine
         /// <param name="filePath">The path to the GeoNames database file. The file must be a tab-delimited text file.</param>
         public void LoadFromFile(string filePath)
         {
+            // First build a spatial index of all the photo locations so we can filter out GeoNames places that
+            // are too far away from any media content
+            BuildPhotoTree();
+
             Logger.Write("Loading GeoNames database...");
 
             var fileInfo = new FileInfo(filePath);
@@ -136,14 +151,15 @@ namespace GroupMachine
             ProgressBar.Completed = 0;
             ProgressBar.Start();
 
-            var places = new List<Place>();
+            int count = 0;
+            int total = 0;
 
             using (var reader = new StreamReader(filePath))
             {
                 string? line;
+
                 while ((line = reader.ReadLine()) != null)
                 {
-                    // Update progress bar based on bytes read (include ignored lines)
                     long bytesReadKb = reader.BaseStream.Position / 1024;
                     ProgressBar.Completed = (int)Math.Min(bytesReadKb, ProgressBar.Total);
 
@@ -156,15 +172,25 @@ namespace GroupMachine
 
                     var featureClass = parts[6];
                     var featureCode = parts[7];
+
+                    // Don't add this to the database if it's not a feature class or code we're interested in
                     if (!IsRelevantFeature(featureClass, featureCode))
                         continue;
 
+                    // Make sure latitude and longitude aren't invalid
                     if (!double.TryParse(parts[4], NumberStyles.Float, CultureInfo.InvariantCulture, out var lat))
                         continue;
                     if (!double.TryParse(parts[5], NumberStyles.Float, CultureInfo.InvariantCulture, out var lon))
                         continue;
 
-                    places.Add(new Place
+                    total++;
+
+                    // Don't add this to the database if it's over 100km from any media content
+                    if (!IsRelevantPlace(lat, lon))
+                        continue;
+
+                    // Add to places database
+                    var place = new Place
                     {
                         Name = parts[1],
                         Latitude = lat,
@@ -173,45 +199,38 @@ namespace GroupMachine
                         Country = parts[8],
                         Population = int.TryParse(parts[14], out var pop) ? pop : 0,
                         FeatureClass = featureClass,
-                        FeatureCode = featureCode,
-                        Location = _geometryFactory.CreatePoint(new Coordinate(lon, lat))
-                    });
+                        FeatureCode = featureCode
+                    };
+
+                    var envelope = new Envelope(lon, lon, lat, lat);
+                    _index.Insert(envelope, place);
+
+                    count++;
                 }
             }
 
             ProgressBar.Stop();
+            Logger.Write($"Loaded {GrammarHelper.Pluralise(count, "relevant place", "relevant places")} from {GrammarHelper.Pluralise(total, "entry", "entries")}.");
 
-            Logger.Write($"Inserting {GrammarHelper.Pluralise(places.Count, "place", "places")} into spatial index...");
-            int skipped = 0;
-            ProgressBar.Total = places.Count;
-            ProgressBar.Start();
+            // If the count is zero then the selected GeoNames database does not cover the locations in the media. There's
+            // no point trying to continue because the user will end up with date ranges, which can be achieved by not using
+            // a GeoNames database at all. 
 
-            foreach (var place in places)
+            if (count == 0)
             {
-                if (place is null) continue;
-
-                if (place.Location is null)
-                {
-                    skipped++;
-                    Logger.Write($"Skipping place with no location: {place.Name} ({place.FeatureClass}.{place.FeatureCode})", true);
-                    continue;
-                }
-
-                _index.Insert(place.Location.EnvelopeInternal, place);
-                ProgressBar.Completed++;
+                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"  ⚠️ No matching places were found in the GeoNames database!");
+                Console.ResetColor();
+                Console.WriteLine("      The selected database is probably for the wrong country.");
+                Console.WriteLine($"      Try the 'allCountries' database for worldwide coverage.");
+                Environment.Exit(-1);
             }
-
-            ProgressBar.Stop();
-
-            // Build the spatial index for fast querying. We have no visibility on
-            // the progress of this operation, so just log that we're doing it.
 
             Logger.Write("Building spatial index...");
             _index.Build();
-
-            if (skipped > 0)
-                Logger.Write($"Spatial index built - {GrammarHelper.Pluralise(skipped, "invalid entry", "invalid entries")} skipped (non-fatal)");
         }
+
         /// <summary>
         /// Determines whether the specified feature class and feature code represent a relevant feature based on the
         /// current location precision level.
@@ -230,56 +249,161 @@ namespace GroupMachine
         {
             return Globals.LocationPrecision switch
             {
+                1 => fc switch  // Level 1 precision includes only major places and admin regions
+                {
+                    "P" => Level1PlaceCodes.Contains(fcode),
+                    "L" => true,
+                    "A" => Level1AdminCodes.Contains(fcode) || FallbackAdminCodes.Contains(fcode),
+                    "H" => AllowedHydrographicFeatures.Contains(fcode),
+                    _ => false
+                },
                 2 => fc switch  // Level 2 precision includes places and admin regions
                 {
                     "P" => true,
                     "L" => true,
-                    "A" => Level2AdminCodes.Contains(fcode),
+                    "A" => Level2AdminCodes.Contains(fcode) || FallbackAdminCodes.Contains(fcode),
+                    "H" => AllowedHydrographicFeatures.Contains(fcode),
                     _ => false
                 },
-                3 => fc switch  // Level 3 precision includes places, admin regions, and selected spot features
+                _ => fc switch  // Level 3 (default) precision includes places, admin regions, and selected spot features
                 {
                     "P" => true,
                     "L" => true,
                     "S" => AllowedSpotFeatures.Contains($"{fc}.{fcode}"),
-                    "A" => Level2AdminCodes.Contains(fcode),
-                    _ => false
-                },
-                _ => fc switch  // Level 1 (and default) precision includes only major places and admin regions
-                {
-                    "P" => Level1PlaceCodes.Contains(fcode),
-                    "L" => true,
-                    "A" => Level1AdminCodes.Contains(fcode),
+                    "A" => Level2AdminCodes.Contains(fcode) || FallbackAdminCodes.Contains(fcode),
+                    "H" => AllowedHydrographicFeatures.Contains(fcode),
                     _ => false
                 },
             };
         }
 
         /// <summary>
-        /// Given a latitude and longitude, find the nearest place in the GeoNames database.
-        /// We first try to find a non-admin place within 1 km, and if that fails, we expand the search to 5 km.
+        /// Builds a spatial index of photo locations from the global image metadata list. This index is used to filter out
+        /// loading GeoNames places that are too far away from any media content. Only images with valid GPS coordinates are
+        /// included in the index.
         /// </summary>
-        /// <param name="latitude"></param>
-        /// <param name="longitude"></param>
+        private static void BuildPhotoTree()
+        {
+            foreach (var image in Globals.ImageMetadataList)
+            {
+                // Ignore missing/invalid GPS coordinates
+                if (image.Latitude == 0 && image.Longitude == 0)
+                    continue;
+
+                var coordinate = new Coordinate(image.Longitude, image.Latitude);
+
+                _photoTree.Insert(
+                    new Envelope(
+                        coordinate.X,
+                        coordinate.X,
+                        coordinate.Y,
+                        coordinate.Y),
+                    coordinate);
+            }
+
+            Logger.Write($"Inserted {_photoTree.Count} photo locations into spatial index", true);
+        }
+
+        /// <summary>
+        /// Determines whether a given latitude and longitude are within 1 degree of any photo location in the spatial index.
+        /// If they are then the place is considered relevant and will be loaded from the GeoNames database. This helps
+        /// to filter out places that are too far away from any media content.
+        /// </summary>
+        /// <remarks>+/- 1 degree is a rough approximation of 111 km.</remarks>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
         /// <returns></returns>
+        private static bool IsRelevantPlace(double lat, double lon)
+        {
+            var env = new Envelope(
+                lon - 1.0,
+                lon + 1.0,
+                lat - 1.0,
+                lat + 1.0);
+
+            return _photoTree.Query(env).Any();
+        }
+
+        /// <summary>
+        /// Finds the most appropriate nearby GeoNames place for the specified coordinates.
+        /// The search uses a tiered approach, prioritising visible landmarks, nearby places,
+        /// and then broader geographic features when no more specific location can be found.
+        /// The fallback prioritises preferred hydrographic features such as seas, gulfs and
+        /// straits, followed by administrative regions and populated places.
+        /// </summary>
+        /// <param name="latitude">The latitude of the location to search.</param>
+        /// <param name="longitude">The longitude of the location to search.</param>
+        /// <returns>The best matching place, or null if no suitable location is found.</returns>
         public Place? FindNearest(double latitude, double longitude)
         {
+            // Note to self: this logic could be optimised to avoid multiple queries and distance
+            // calculations, but for now it's clear, works well and (thankfully) is extremely fast
+            // at looking up places in the spatial index.
+
             var point = _geometryFactory.CreatePoint(new Coordinate(longitude, latitude));
 
-            var near = QueryNearby(point, 0.01)
+            // First try to find interesting landmarks (spot features) within 100 m that are
+            // likely to be the subject of a photo or video. If you can see it, then it's
+            // probably worth naming the album after it.
+
+            if (Globals.LocationPrecision == 3) // Only level 3 precision loads spot features
+            {
+                var landmark = QueryNearby(point, 0.001)
+                    .Select(p => new
+                    {
+                        Place = p,
+                        Distance = GeoUtils.Haversine(latitude, longitude, p.Latitude, p.Longitude)
+                    })
+                    .Where(x =>
+                        x.Place.FeatureClass == "S" &&
+                        AllowedSpotFeatures.Contains($"{x.Place.FeatureClass}.{x.Place.FeatureCode}"))
+                    .OrderBy(x => x.Distance)
+                    .FirstOrDefault();
+
+                if (landmark != null)
+                    return landmark.Place;
+            }
+
+            // If no landmark was found, look for a nearby local feature within 1 km.
+            // Administrative regions, hydrographic features and spot features are
+            // deliberately excluded from this search.
+
+            var localFeature = QueryNearby(point, 0.01)
                 .Select(p => new
                 {
                     Place = p,
                     Distance = GeoUtils.Haversine(latitude, longitude, p.Latitude, p.Longitude)
                 })
-                .Where(x => x.Place.FeatureClass != "A")
+                .Where(x => x.Place.FeatureClass == "L")
                 .OrderBy(x => x.Distance)
-                .ToList();
+                .FirstOrDefault();
 
-            if (near.Count != 0)
-                return near.First().Place;
+            if (localFeature != null)
+                return localFeature.Place;
 
-            var fallback = QueryNearby(point, 0.05)
+            // If no local feature was found, look for the nearest populated place within 10 km.
+
+            var nearbySettlement = QueryNearby(point, 0.1)
+                .Select(p => new
+                {
+                    Place = p,
+                    Distance = GeoUtils.Haversine(latitude, longitude, p.Latitude, p.Longitude)
+                })
+                .Where(x => x.Place.FeatureClass == "P")
+                .OrderBy(x => x.Distance)
+                .FirstOrDefault();
+
+            if (nearbySettlement != null)
+                return nearbySettlement.Place;
+
+            // As a final fallback, search within 100 km and prefer:
+            //   1. Hydrographic features (H)
+            //   2. Populated places (P)
+            //   3. Administrative regions (A)
+            //
+            // Within each category, the nearest feature wins.
+
+            var regionalCandidates = QueryNearby(point, 1.0)
                 .Select(p => new
                 {
                     Place = p,
@@ -288,11 +412,35 @@ namespace GroupMachine
                 .OrderBy(x => x.Distance)
                 .ToList();
 
-            if (fallback.Count != 0)
-                return fallback.First().Place;
+            // Check for the nearest preferred hydrographic feature (such as a sea, gulf or strait)
+            // first. This gives a useful album name for offshore photos without selecting a specific
+            // feature such as a bay or channel
 
-            // If no place found, then give up and return nothing
-            Logger.Write($"No nearby place found for ({latitude}, {longitude}) within 5 km.", true);
+            var waterFeature = regionalCandidates
+                .FirstOrDefault(x => x.Place.FeatureClass == "H");
+
+            if (waterFeature != null)
+                return waterFeature.Place;
+
+            // If no hydrographic feature found, check for the nearest administrative region
+
+            var administrativeArea = regionalCandidates
+                .FirstOrDefault(x => x.Place.FeatureClass == "A");
+
+            if (administrativeArea != null)
+                return administrativeArea.Place;
+
+            // If no administrative region found, check for the nearest populated place
+
+            var populatedPlace = regionalCandidates
+                .FirstOrDefault(x => x.Place.FeatureClass == "P");
+
+            if (populatedPlace != null)
+                return populatedPlace.Place;
+
+            // Give up if no suitable place was found within 100 km
+
+            Logger.Write($"No nearby place found for ({latitude}, {longitude}) within 100 km.", true);
             return null;
         }
 

@@ -17,16 +17,16 @@
 
 	<!-- Version information -->
 	<!-- Remember major.minor.BUILD.revision! -->
-	<Version>1.4.0.0</Version>
-	<AssemblyVersion>1.4.0.0</AssemblyVersion>
-	<FileVersion>1.4.0.0</FileVersion>
+	<Version>1.5.0.0</Version>
+	<AssemblyVersion>1.5.0.0</AssemblyVersion>
+	<FileVersion>1.5.0.0</FileVersion>
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	<AnalysisLevel>latest-recommended</AnalysisLevel>
 </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="ini-parser" Version="2.5.2" />
-    <PackageReference Include="MetadataExtractor" Version="2.8.1" />
+    <PackageReference Include="MetadataExtractor" Version="2.9.3" />
     <PackageReference Include="NetTopologySuite" Version="2.6.0" />
   </ItemGroup>
 
