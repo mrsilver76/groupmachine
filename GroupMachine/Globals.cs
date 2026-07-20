@@ -63,7 +63,7 @@ namespace GroupMachine
         /// <summary>
         /// Defines how files are copied or linked to the destination folder.
         /// </summary>
-        internal enum CopyMode
+        internal enum OperationMode
         {
             /// <summary>Default value, should not be used.</summary>
             Unknown,
@@ -75,7 +75,10 @@ namespace GroupMachine
             Copy,
 
             /// <summary>Create hard or soft links in the destination folder.</summary>
-            HardSoftLink
+            HardSoftLink,
+
+            /// <summary>Create a simulation report without making any changes to files or folders.</summary>
+            Simulation,
         }
 
         /// <summary>
@@ -98,8 +101,8 @@ namespace GroupMachine
         /// <summary>Destination folder for processed media.</summary>
         public static string DestinationFolder { get; set; } = "";
 
-        /// <summary>Current file copy mode.</summary>
-        public static CopyMode CurrentCopyMode { get; set; } = CopyMode.Unknown;
+        /// <summary>Current file operation mode.</summary>
+        public static OperationMode CurrentOperationMode { get; set; } = OperationMode.Unknown;
 
         /// <summary>Maximum distance in km for grouping media into the same album.</summary>
         public static double DistanceThreshold { get; set; } = 10.0;
@@ -109,9 +112,6 @@ namespace GroupMachine
 
         /// <summary>If true, scans subfolders of each source folder.</summary>
         public static bool ScanRecursive { get; set; }
-
-        /// <summary>If true, runs in test mode without making file changes.</summary>
-        public static bool TestMode { get; set; }
 
         /// <summary>Date format used when naming albums.</summary>
         public static string DateFormat { get; set; } = "dd MMM yyyy";
@@ -135,7 +135,7 @@ namespace GroupMachine
         public static bool UsePartNumbers { get; set; } = true;
 
         /// <summary>Level of precision (1-3) for album names. 1 is broad, 3 is explicit.</summary>
-        public static int LocationPrecision { get; set; } = 2;
+        public static int LocationPrecision { get; set; } = 3;
 
         /// <summary>Include only media taken on or after this date.</summary>
         public static DateTime? DateTakenFrom { get; set; }
@@ -199,17 +199,18 @@ namespace GroupMachine
         }
 
         /// <summary>
-        /// Readable description of the current copy mode.
+        /// Readable description of the current operation mode.
         /// </summary>
         public static string CopyModeText
         {
             get
             {
-                return CurrentCopyMode switch
+                return CurrentOperationMode switch
                 {
-                    CopyMode.Move => "Moving",
-                    CopyMode.Copy => "Copying",
-                    CopyMode.HardSoftLink => "Linking",
+                    OperationMode.Move => "Moving",
+                    OperationMode.Copy => "Copying",
+                    OperationMode.HardSoftLink => "Linking",
+                    OperationMode.Simulation => "Simulating",
                     _ => "Unknown"
                 };
             }

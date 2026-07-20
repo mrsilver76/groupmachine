@@ -25,6 +25,7 @@ namespace GroupMachine
         private static Timer? _timer;
         private static readonly object _lock = new();
         private static DateTime? _startTime;
+        private static readonly int _barWidth = 25;  // Default width of the progress bar
 
         /// <summary>The total number of items to process.</summary>
         public static long Total { get; set; }
@@ -51,7 +52,7 @@ namespace GroupMachine
                     return;
 
                 Console.CursorVisible = false;
-                _timer = new Timer(Update, null, 0, 3000);
+                _timer = new Timer(Update, null, 0, 1000);
             }
         }
 
@@ -86,10 +87,9 @@ namespace GroupMachine
                     return;
 
                 double pct = (double)Completed / Total;
-                int barWidth = 20;
 
-                int filled = (int)(pct * barWidth);
-                int empty = barWidth - filled;
+                int filled = (int)(pct * _barWidth);
+                int empty = _barWidth - filled;
 
                 string bar = "[" + new string('#', filled) + new string('.', empty) + "]";
 
@@ -97,7 +97,7 @@ namespace GroupMachine
                 if (Completed >= 5 && pct >= 0.01)  // Only show ETA with enough data
                     eta = CalculateEta();
 
-                string line = $"   Status: {bar} {pct * 100:F1}% complete {eta}";
+                string line = $"   Status: {bar} {pct * 100:F0}% complete {eta}";
                 if (line.Length < 70)
                     line = line.PadRight(70); // pad to prevent leftover chars
 
@@ -126,10 +126,10 @@ namespace GroupMachine
             if (remaining.TotalSeconds < 60)
                 return $"({Math.Ceiling(remaining.TotalSeconds / 5) * 5} secs left)";
             if (remaining.TotalMinutes < 5)
-                return $"(~{Math.Ceiling(remaining.TotalMinutes)} mins left)";
+                return $"({Math.Ceiling(remaining.TotalMinutes)} mins left)";
             if (remaining.TotalMinutes < 60)
-                return $"(~{Math.Ceiling(remaining.TotalMinutes / 5) * 5} mins left)";
-            return $"(~{Math.Ceiling(remaining.TotalMinutes / 15) * 15} mins left)";
+                return $"({Math.Ceiling(remaining.TotalMinutes / 5) * 5} mins left)";
+            return $"({Math.Ceiling(remaining.TotalMinutes / 15) * 15} mins left)";
         }
 
 

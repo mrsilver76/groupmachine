@@ -45,17 +45,21 @@ namespace GroupMachine
             CommandLineParser.ParseArguments(args);
 
             // Display a header with some setting information
-            ConsoleOutput.ShowHeader(args);
+            ConsoleOutput.ShowHeader();
 
             // Get the timestamp of the last processed file
             Globals.GetLastProcessedTimestamp();
 
-            // Load geonames database if specified. Note, you cannot call this after
-            // scanning the media as location enrichment is done during the scan.
+            // Start processing photo and videos
+            MediaScanner.ScanFolders();
+
+            // Load geonames database if specified and enrich the data
             if (!string.IsNullOrEmpty(Globals.GeonamesDatabase) && File.Exists(Globals.GeonamesDatabase))
             {
                 Globals.GeoNamesLookup = new GeoNamesLookup();
                 Globals.GeoNamesLookup.LoadFromFile(Globals.GeonamesDatabase);
+                // Now enrich the location data
+                MediaScanner.EnrichLocations();
             }
             else
             {
@@ -63,24 +67,29 @@ namespace GroupMachine
                 Logger.Write("No GeoNames database found; location-based album naming disabled.", true);
             }
 
-            // Start processing photo and videos
-            MediaScanner.ScanFolders();
-
             // Impute missing/invalid location data
-            MediaMetadataExtractor.ImputateMissingLocationData();
+            MediaMetadataExtractor.ImputeMissingLocationData();
 
             // Build the albums based on the scanned media
             AlbumManager.BuildAlbums();
 
-            // Create the album folders based on the unique album names
-            if (!MediaProcessor.CreateAlbumFolders())
+            // If in test mode, log a simulation preview and exit
+            if (Globals.CurrentOperationMode == Globals.OperationMode.Simulation)
             {
-                Logger.Write("Failed to create one or more album folders. Exiting.");
-                Environment.Exit(1);
+                MediaProcessor.LogSimulationPreview();
             }
+            else  // not in test mode
+            {
+                // Create the album folders based on the unique album names
+                if (!MediaProcessor.CreateAlbumFolders())
+                {
+                    Logger.Write("Failed to create one or more album folders. Exiting.");
+                    Environment.Exit(1);
+                }
 
-            // Move or copy the items to their respective album folders
-            MediaProcessor.ProcessMedia();
+                // Move or copy the items to their respective album folders
+                MediaProcessor.ProcessMedia();
+            }
 
             // Report that we're finished
             Logger.Write("GroupMachine finished.");
