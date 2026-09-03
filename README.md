@@ -8,15 +8,11 @@ It can also name these albums using real-world place names, making them easier t
 
 ## 📚 Overview
 
-GroupMachine helps you organize large collections of photos and videos by grouping them into albums based on when and where they were taken.
-It’s especially useful if you’ve downloaded images from your camera, mobile phone or cloud service (like Apple iCloud or Google Photos),
-which often contain large, mixed sets from multiple locations and dates.
+GroupMachine automatically organises large collections of photos and videos into albums based on when and where they were taken. It is especially useful for organising media downloaded from cameras, phones or cloud services (such as Apple iCloud and Google Photos), where photos from multiple trips, events and locations are often mixed together.
 
-By default, the tool groups your photos and videos into albums - which are simply folders containing related media files. It creates a new album
-whenever there’s a significant gap in time or location between your shots (for example, different cities or days apart). This way, the folder structure
-naturally reflects your trips, events, or outings without manual sorting.
+Albums are simply folders containing related media. GroupMachine creates a new album when there is a significant gap in time or location between photos and videos, naturally separating trips, events and outings without manual sorting.
 
-If you supply a GeoNames database file (freely downloadable) then GroupMachine can rename the folders to actual place names.
+GroupMachine can also use the GPS coordinates to name albums with real-world place names, making collections easier to browse.
 
 >[!TIP]
 >Once you've grouped your photos, [SideBySide](https://github.com/mrsilver76/sidebyside) can combine two portrait shots into a single landscape image, making them ready for digital frames without awkward cropping or black bars.
