@@ -15,7 +15,7 @@ GroupMachine does not perform the downloading or scheduling itself. Instead, it 
 
 For an automated workflow, use `-df last` (`--date-from last`).
 
-This tells GroupMachine to process media from the date recorded by the previous run onwards, allowing subsequent runs to process new content without repeatedly processing the entire library.
+This tells GroupMachine to continue processing from the last file processed during the previous run, allowing subsequent runs to process new content without repeatedly processing the entire library.
 
 The last processed date is stored in GroupMachine's `settings.ini` file. The location of this file is shown when you run `-h` (`--help`). It is normally located in the parent folder of the log files.
 
@@ -72,6 +72,8 @@ For example, [iCloud Photos Downloader](https://github.com/icloud-photos-downloa
 
 The downloader should ideally be configured so that it can be run repeatedly and only downloads media that has not already been downloaded. GroupMachine can then perform the separate task of organising that growing local library.
 
+Be aware that the downloader and GroupMachine will maintain separate states. The downloader determines which files need to be downloaded, while GroupMachine uses its own `settings.ini` to determine where incremental processing should resume. The `settings.ini` file can also be parsed by an automation script if you want GroupMachine's last processed date to influence when or what the downloader retrieves.
+
 ## Using GroupMachine with photo management software
 
 GroupMachine creates a conventional folder based album structure, which means the resulting folders can also be useful to other photo management applications.
@@ -96,7 +98,7 @@ Local photo library
 GroupMachine
     -df last
     -xr
-    -pa "<yyyy>/"
+    -pa "<yyyy>/<MM>-<dd> "
         ↓
 Organised album folders
         ↓
@@ -106,7 +108,7 @@ Optional photo management software
 For example
 
 ```bash
-groupmachine <source> -o <output> -df last -xr -pa "<yyyy>/"
+groupmachine <source> -o <output> -df last -xr -pa "<yyyy>/<MM>-<dd> "
 ```
 
 The downloader and GroupMachine can then be run from a scheduled task, cron job, shell script or other automation system.

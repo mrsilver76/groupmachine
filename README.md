@@ -136,7 +136,7 @@ Explanation of options:
 This example uses the GeoNames `allCountries.txt` database, the complete worldwide database of places and points of interest, to name albums based on location. GroupMachine uses specific landmarks where available and falls back to broader place names when needed. The four digit year is appended to each album name, and files are copied rather than moved, leaving the originals untouched.
 
 ```
-GroupMachine "d:\Photos" -o "e:\My Album" -r -g c:\temp\allCountries.txt -a "YYYY" -c
+GroupMachine "d:\Photos" -o "e:\My Album" -r -g c:\temp\allCountries.txt -a "yyyy" -c
 ```
 Explanation of options:
 
@@ -144,7 +144,7 @@ Explanation of options:
 - `-o "e:\My Album"`: Destination folder for the albums
 - `-r`: Search subfolders recursively
 - `-g c:\temp\allCountries.txt`: Use the GeoNames database for location based album names
-- `-a "YYYY"`: Append the four digit year to each album name
+- `-a "yyyy"`: Append the four digit year to each album name
 - `-c`: Copy files into the new album structure, leaving the originals unchanged
 
 ### Customising album grouping and output format
