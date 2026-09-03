@@ -37,6 +37,24 @@ If you supply a GeoNames database file (freely downloadable) then GroupMachine c
 - 🧠 Detects identical files to avoid unnecessary duplicates.
 - ⏳ Supports incremental processing using date filters and resume support.
 
+## How does GroupMachine work?
+
+GroupMachine is designed around the way people typically take photos and videos. We tend to take a short burst of content in one place (on holiday, a day out or an event) before moving on to somewhere else. GroupMachine uses this pattern to work out which content belongs together and organise it into albums.
+
+1. GroupMachine scans one or more folders and creates a list of all the photos and videos it finds.
+2. It examines each file to determine when and where it was taken. This information is normally taken from the metadata stored in the file. If the date, time or location is missing, GroupMachine can infer it from other nearby photos and videos where possible.
+3. The content is then ordered by the date and time it was taken.
+4. GroupMachine works through the content in chronological order, grouping together photos and videos that were taken close together in time and location. By default, content can be grouped when it is within 48 hours and 10 km of the surrounding content. When these boundaries are exceeded, a new group is started.
+5. Each group becomes an album. GroupMachine creates a folder for each album and names it using the date range of the content. If a GeoNames database is provided, it can instead use the name of the place where the content was taken.
+6. Finally, GroupMachine moves, copies or links each photo and video into the folder for its album, depending on the selected options.
+
+The result is a set of albums (one per folder) that reflect how the content was actually captured, rather than simply splitting it by date.
+
+For more detail on how albums are created and named, see:
+
+* [How grouping works](docs/grouping.md)
+* [How album names are created](docs/album-names.md)
+
 ## 🧩 How does grouping work?
 
 Grouping is based on two key factors: the time between shots and the distance between their locations. When the gap between consecutive
@@ -433,6 +451,9 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 - GeoNames is a project of Unxos GmbH. This tool is not affiliated with or endorsed by Unxos GmbH.
 
 ## 🕰️ Version history
+
+### 1.5.1 (xx September 2027)
+- Fixed a bug that caused GroupMachine to crash when trying to move (using `-m` or `--move`) content into a folder.
 
 ### 1.5.0 (20 July 2027)
 
