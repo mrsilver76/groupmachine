@@ -32,9 +32,11 @@ GroupMachine can also use the GPS coordinates to name albums with real-world pla
 
 ## 🧩 How does GroupMachine work?
 
-GroupMachine is designed around the way people typically take photos and videos. That is by taking short bursts of content in one place (on holiday, a day out or an event) before moving on to somewhere else. GroupMachine uses this pattern to work out which content belongs together and organise it into albums.
+GroupMachine is designed around the way people typically take photos and videos. That is by taking short bursts of content in one place (on holiday, a day out or an event) before moving on to somewhere else.
 
-1. GroupMachine scans one or more folders and creates a list of all the photos and videos it finds.
+GroupMachine uses this pattern to work out which content belongs together and organise it into albums:
+
+1. Firstly GroupMachine scans one or more folders and creates a list of all the photos and videos it finds.
 2. It examines each file to determine when and where it was taken. This information is normally taken from the metadata stored in the file. If the date, time or location is missing, GroupMachine can infer it from other nearby photos and videos where possible.
 3. The content is then ordered by the date and time it was taken.
 4. GroupMachine works through the content in chronological order, grouping together photos and videos that were taken close together in time and location. By default, content can be grouped when it is within 48 hours and 10 km of the surrounding content. When these boundaries are exceeded, a new group is started.
