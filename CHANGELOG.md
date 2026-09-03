@@ -4,6 +4,7 @@
 - Fixed a bug that caused GroupMachine to crash when trying to move (using `-m` or `--move`) content into a folder.
 - Updated the documentation to put grouping, album naming, automation and changelog into separate files.
 - Updated the documentation to describe the steps that GroupMachine takes when running.
+- Fixed minor errors within the documentation.
 
 ## 1.5.0 (20 July 2027)
 
