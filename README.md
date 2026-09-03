@@ -37,9 +37,9 @@ If you supply a GeoNames database file (freely downloadable) then GroupMachine c
 - 🧠 Detects identical files to avoid unnecessary duplicates.
 - ⏳ Supports incremental processing using date filters and resume support.
 
-## How does GroupMachine work?
+## 🧩 How does GroupMachine work?
 
-GroupMachine is designed around the way people typically take photos and videos. We tend to take a short burst of content in one place (on holiday, a day out or an event) before moving on to somewhere else. GroupMachine uses this pattern to work out which content belongs together and organise it into albums.
+GroupMachine is designed around the way people typically take photos and videos. That is by taking short bursts of content in one place (on holiday, a day out or an event) before moving on to somewhere else. GroupMachine uses this pattern to work out which content belongs together and organise it into albums.
 
 1. GroupMachine scans one or more folders and creates a list of all the photos and videos it finds.
 2. It examines each file to determine when and where it was taken. This information is normally taken from the metadata stored in the file. If the date, time or location is missing, GroupMachine can infer it from other nearby photos and videos where possible.
@@ -54,56 +54,6 @@ For more detail on how albums are created and named, see:
 
 * [How grouping works](docs/grouping.md)
 * [How album names are created](docs/album-names.md)
-
-## 🧩 How does grouping work?
-
-Grouping is based on two key factors: the time between shots and the distance between their locations. When the gap between consecutive
-photos or videos exceeds either the time or distance threshold, a new album is started.
-
-Using the default thresholds (48 hours and 10 km) means that photos/videos taken less than 2 days apart and within 10 kilometres (or 6.2 miles) will be grouped together.
-For example, photos/videos taken during a single day trip or a weekend away will usually fall into the same album. If you then travel to a different city
-a few days later, that will create a new album. 
-
-Because the grouping relies on metadata timestamps and GPS coordinates, it assumes your media files include accurate time and location information.
-These assumptions generally hold true for photos and videos taken by modern smartphones and digital cameras. If the time metadata is missing or invalid, GroupMachine
-can use the created or last modified timestamp of the file instead (whichever is the earliest). 
-
-You can override these defaults using `-t` (`--time`) and `-d` (`--distance`).
-
-> [!TIP]
-> In regions where towns and landmarks are more widely spaced, a larger distance than the default 10 km may produce better album names - for example, the United States, Canada, Australia and New Zealand.
-
-## 🧭 Enhancing album names using location data
-
-By default, album folders are named using date ranges reflecting when the photos or videos were taken. You can improve folder naming by using
-the [GeoNames](https://www.geonames.org/) database, which maps GPS coordinates to nearby place names.
-
-If you provide the GeoNames data, GroupMachine will look up suitable nearby locations for each photo or video using a prioritised search of geographic features. It then selects up to four place names for the album title. These are chosen in the order they first appear in the group, with less frequent locations dropped if more than four are found. The result is a name that prioritises the most representative places, kept in the order you visited them.
-
-For example, an album might be named "_Le Marais, Montmartre and Latin Quarter_" instead of just "_4 Apr 2025 - 7 Apr 2025_".
-
-If you frequently visit the same places, you can avoid album name collisions by appending a date to each name using `-a` or `--append`. For instance, using `--append "MMMM yyyy"` would label your album as "_Le Marais, Montmartre and Latin Quarter (April 2025)_"
-
->[!IMPORTANT]
->**To enable geocoding, you must download a GeoNames dataset from the [GeoNames download page](https://download.geonames.org/export/dump/).** Use `allCountries.zip` for worldwide coverage (recommended) or the `.zip` file for your country. Unzip the archive and pass the resulting `.txt` file to GroupMachine using `-g` (or `--geocode`).
-
-Rather than simply picking the closest place, GroupMachine works outward through a series of distance tiers, checking for the most specific locations first and only falling back to broader areas when nothing closer is found.
-
-| Distance    | Location types prioritised                                 | Example results                            |
-|:----------- |:---------------------------------------------------------- |:------------------------------------------ |
-| Up to 100m  | Spot features, landmarks and notable places                | _Eiffel Tower, Tower Bridge, Hyde Park_      |
-| Up to 1km   | Local features such as neighbourhoods and smaller areas    | _Montmartre, Le Marais, Greenwich_           |
-| Up to 10km  | Populated places                                           | _Paris, Bath, Bristol_                       |
-| Up to 100km | Larger geographic features and selected fallback locations | _Somerset, Provence-Alpes-Côte d’Azur, English Channel_ |
-
-The precision level controls which tiers are considered. The default mode (`--precision 3`) considers all tiers, starting with the most specific locations and falling back to broader areas when no suitable match is found. 
-
-Selected hydrographic features such as seas, gulfs and straits are included as a final fallback for photos and videos taken on water where no suitable land based location is available.
-
-This keeps albums from being named after obscure database entries that happen to be nearby, while still using a recognisable landmark when one is genuinely close by.
-
->[!NOTE]
->If a photo or video has missing or invalid GPS data, GroupMachine can infer its location from the nearest item taken close in time (_imputing_). This helps group media from the same event or trip, but the inferred location may not reflect any movement that occurred between shots.
 
 ## 📦 Download
 
