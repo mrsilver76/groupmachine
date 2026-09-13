@@ -55,6 +55,7 @@ namespace GroupMachine
             {
                 string albumPath = Path.Combine(Globals.DestinationFolder, imageMetadata.AlbumName);
                 string destinationFilePath = Path.Combine(albumPath, Path.GetFileName(imageMetadata.FileName));
+                long fileSize = new FileInfo(imageMetadata.FileName).Length;
 
                 // Copy or move the file to the destination folder with a unique name
                 bool result = CopyOrMoveFileWithUniqueName(imageMetadata.FileName, destinationFilePath);
@@ -72,7 +73,6 @@ namespace GroupMachine
                 );
 
                 // Update the progress bar with the size of the processed file
-                long fileSize = new FileInfo(imageMetadata.FileName).Length;
                 ProgressBar.Completed += fileSize;
 
             });

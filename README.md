@@ -8,18 +8,11 @@ It can also name these albums using real-world place names, making them easier t
 
 ## 📚 Overview
 
-GroupMachine helps you organize large collections of photos and videos by grouping them into albums based on when and where they were taken.
-It’s especially useful if you’ve downloaded images from your camera, mobile phone or cloud service (like Apple iCloud or Google Photos),
-which often contain large, mixed sets from multiple locations and dates.
+GroupMachine automatically organises large collections of photos and videos into albums based on when and where they were taken. It is especially useful for organising media downloaded from cameras, phones or cloud services (such as Apple iCloud and Google Photos), where photos from multiple trips, events and locations are often mixed together.
 
-By default, the tool groups your photos and videos into albums - which are simply folders containing related media files. It creates a new album
-whenever there’s a significant gap in time or location between your shots (for example, different cities or days apart). This way, the folder structure
-naturally reflects your trips, events, or outings without manual sorting.
+Albums are simply folders containing related media. GroupMachine creates a new album when there is a significant gap in time or location between photos and videos, naturally separating trips, events and outings without manual sorting.
 
-If you supply a GeoNames database file (freely downloadable) then GroupMachine can rename the folders to actual place names.
-
-| ![Screenshot of file explorer showing 6 folders with names based on the location of the images and videos](./assets/files.png) |
-|-|
+GroupMachine can also use the GPS coordinates to name albums with real-world place names, making collections easier to browse.
 
 >[!TIP]
 >Once you've grouped your photos, [SideBySide](https://github.com/mrsilver76/sidebyside) can combine two portrait shots into a single landscape image, making them ready for digital frames without awkward cropping or black bars.
@@ -37,55 +30,28 @@ If you supply a GeoNames database file (freely downloadable) then GroupMachine c
 - 🧠 Detects identical files to avoid unnecessary duplicates.
 - ⏳ Supports incremental processing using date filters and resume support.
 
-## 🧩 How does grouping work?
+## 🧩 How does GroupMachine work?
 
-Grouping is based on two key factors: the time between shots and the distance between their locations. When the gap between consecutive
-photos or videos exceeds either the time or distance threshold, a new album is started.
+GroupMachine is designed around the way people typically take photos and videos. That is by taking short bursts of content in one place (on holiday, a day out or an event) before moving on to somewhere else.
 
-Using the default thresholds (48 hours and 10 km) means that photos/videos taken less than 2 days apart and within 10 kilometres (or 6.2 miles) will be grouped together.
-For example, photos/videos taken during a single day trip or a weekend away will usually fall into the same album. If you then travel to a different city
-a few days later, that will create a new album. 
+GroupMachine uses this pattern to work out which content belongs together and organise it into albums:
 
-Because the grouping relies on metadata timestamps and GPS coordinates, it assumes your media files include accurate time and location information.
-These assumptions generally hold true for photos and videos taken by modern smartphones and digital cameras. If the time metadata is missing or invalid, GroupMachine
-can use the created or last modified timestamp of the file instead (whichever is the earliest). 
+1. GroupMachine scans one or more folders and creates a list of all the photos and videos it finds. This could be multiple collections of photos/vidoes taken by different people and/or on different devices.
+2. It examines each file to determine when and where it was taken. This information is normally taken from the metadata stored in the file. If the date, time or location is missing, GroupMachine can infer it from other nearby photos and videos where possible.
+3. The content is then ordered by the date and time it was taken.
+4. GroupMachine works through the content in chronological order, grouping together photos and videos that were taken close together in time and location. By default, content can be grouped when it is within 48 hours and 10 km of the surrounding content. When these boundaries are exceeded, a new group is started.
+5. Each group becomes an album. GroupMachine creates a folder for each album and names it using the date range of the content. If a GeoNames database is provided, it can instead use the name of the place where the content was taken.
+6. Finally, GroupMachine moves, copies or links each photo and video into the folder for its album, depending on the selected options. Content with the same filename are checked for duplicates and renamed if they are different.
 
-You can override these defaults using `-t` (`--time`) and `-d` (`--distance`).
+The result is a set of albums (one per folder) that reflect how the content was actually captured, rather than simply splitting it by date.
 
-> [!TIP]
-> In regions where towns and landmarks are more widely spaced, a larger distance than the default 10 km may produce better album names - for example, the United States, Canada, Australia and New Zealand.
+| ![Screenshot of file explorer showing 6 folders with names based on the location of the images and videos](./assets/files.png) |
+|-|
 
-## 🧭 Enhancing album names using location data
+For more detail on how albums are created and named, see:
 
-By default, album folders are named using date ranges reflecting when the photos or videos were taken. You can improve folder naming by using
-the [GeoNames](https://www.geonames.org/) database, which maps GPS coordinates to nearby place names.
-
-If you provide the GeoNames data, GroupMachine will look up suitable nearby locations for each photo or video using a prioritised search of geographic features. It then selects up to four place names for the album title. These are chosen in the order they first appear in the group, with less frequent locations dropped if more than four are found. The result is a name that prioritises the most representative places, kept in the order you visited them.
-
-For example, an album might be named "_Le Marais, Montmartre and Latin Quarter_" instead of just "_4 Apr 2025 - 7 Apr 2025_".
-
-If you frequently visit the same places, you can avoid album name collisions by appending a date to each name using `-a` or `--append`. For instance, using `--append "MMMM yyyy"` would label your album as "_Le Marais, Montmartre and Latin Quarter (April 2025)_"
-
->[!IMPORTANT]
->**To enable geocoding, you must download a GeoNames dataset from the [GeoNames download page](https://download.geonames.org/export/dump/).** Use `allCountries.zip` for worldwide coverage (recommended) or the `.zip` file for your country. Unzip the archive and pass the resulting `.txt` file to GroupMachine using `-g` (or `--geocode`).
-
-Rather than simply picking the closest place, GroupMachine works outward through a series of distance tiers, checking for the most specific locations first and only falling back to broader areas when nothing closer is found.
-
-| Distance    | Location types prioritised                                 | Example results                            |
-|:----------- |:---------------------------------------------------------- |:------------------------------------------ |
-| Up to 100m  | Spot features, landmarks and notable places                | _Eiffel Tower, Tower Bridge, Hyde Park_      |
-| Up to 1km   | Local features such as neighbourhoods and smaller areas    | _Montmartre, Le Marais, Greenwich_           |
-| Up to 10km  | Populated places                                           | _Paris, Bath, Bristol_                       |
-| Up to 100km | Larger geographic features and selected fallback locations | _Somerset, Provence-Alpes-Côte d’Azur, English Channel_ |
-
-The precision level controls which tiers are considered. The default mode (`--precision 3`) considers all tiers, starting with the most specific locations and falling back to broader areas when no suitable match is found. 
-
-Selected hydrographic features such as seas, gulfs and straits are included as a final fallback for photos and videos taken on water where no suitable land based location is available.
-
-This keeps albums from being named after obscure database entries that happen to be nearby, while still using a recognisable landmark when one is genuinely close by.
-
->[!NOTE]
->If a photo or video has missing or invalid GPS data, GroupMachine can infer its location from the nearest item taken close in time (_imputing_). This helps group media from the same event or trip, but the inferred location may not reflect any movement that occurred between shots.
+* [How grouping works](GROUPING.md)
+* [How album names are created](ALBUM-NAMES.md)
 
 ## 📦 Download
 
@@ -168,7 +134,7 @@ Explanation of options:
 This example uses the GeoNames `allCountries.txt` database, the complete worldwide database of places and points of interest, to name albums based on location. GroupMachine uses specific landmarks where available and falls back to broader place names when needed. The four digit year is appended to each album name, and files are copied rather than moved, leaving the originals untouched.
 
 ```
-GroupMachine "d:\Photos" -o "e:\My Album" -r -g c:\temp\allCountries.txt -a "YYYY" -c
+GroupMachine "d:\Photos" -o "e:\My Album" -r -g c:\temp\allCountries.txt -a "yyyy" -c
 ```
 Explanation of options:
 
@@ -176,7 +142,7 @@ Explanation of options:
 - `-o "e:\My Album"`: Destination folder for the albums
 - `-r`: Search subfolders recursively
 - `-g c:\temp\allCountries.txt`: Use the GeoNames database for location based album names
-- `-a "YYYY"`: Append the four digit year to each album name
+- `-a "yyyy"`: Append the four digit year to each album name
 - `-c`: Copy files into the new album structure, leaving the originals unchanged
 
 ### Customising album grouping and output format
@@ -400,21 +366,7 @@ You can run GroupMachine manually on any folder of photos/videos whenever you li
 
 However, for those who want more automation, you can also create a workflow that automatically downloads new photos from your cloud service (for example, iCloud or Google Photos) and then groups them into albums using GroupMachine. This allows you to maintain an organized library without manually moving files each time.
 
-Key points for setting up an automated workflow:
-
-- **Automate downloads** – Use a third-party tool to fetch images from your cloud service. For example, [iCloud Photos Downloader](https://github.com/icloud-photos-downloader/icloud_photos_downloader) can download photos and videos from iCloud. There are probably similar tools for Google Photos or other services.
-- **Process only new files** – Use `-df last` (`--date-from last`) to tell GroupMachine to only process files added since the last run. This prevents reprocessing older files and ensures incremental grouping.
-- **Access the last processed date** – If you need to incorporate further scripting, the last date processed is stored in `settings.ini`. You can locate this file by checking the path displayed when you run `-h` (`--help`), usually in the parent folder to the log files.
-- **Avoid premature album creation** – Include `-xr` (`--exclude-recent`) to hold off processing very recent photos. This ensures that files still likely to belong to the same album aren’t split across runs.
-- **Organize album names** – Use `-pa` (`--prefix-album`) to place albums into folders (for example, by year) or `-a` (`--append`) to add date elements to the album name (such as year or month). This prevents multiple visits to the same location from merging into a single folder and keeps your albums clear and chronological.
-- **Save disk space** – If you plan to keep all downloaded photos, consider using `-l` (`--link`) instead of copy or move. This creates links to the original files without duplicating them.
-- **Keep geocode data current** – If you’re using location-based album naming, update your GeoNames database periodically to ensure accurate place names.
-- **Integrate into Immich** – If you host your photos and videos with [Immich](https://immich.app/), use [Immich Folder Album Creator](https://github.com/Salvoxia/immich-folder-album-creator) to automatically turn the folders created by GroupMachine into albums within Immich.
-- **Use with other software** – [Picasa](https://picasa.en.softonic.com/) (Google’s legacy desktop app), as well as tools like [PhotoPrism](https://www.photoprism.app/), [LibrePhotos](https://github.com/LibrePhotos/librephotos), [Photoview](https://photoview.github.io/), and [digiKam](https://www.digikam.org/), detect and display albums based on your folder structure, making them compatible with GroupMachine’s output. [Synology Photos](https://www.synology.com/en-global/dsm/feature/photos), however, doesn’t currently offer a way to auto-generate albums from newly added folders or files.
-
->[!TIP]
-> A simple workflow could be a daily or weekly script that downloads new images, then runs GroupMachine with `-df last -xr -pa "<yyyy>/"` to
-> incrementally organize new content into neatly named, chronological albums.
+For more information about this approach, see [AUTOMATION.md](AUTOMATION.md)
 
 ## 🛟 Questions/problems?
 
@@ -434,85 +386,4 @@ GroupMachine currently meets the needs it was designed for, and no major new fea
 
 ## 🕰️ Version history
 
-### 1.5.0 (20 July 2027)
-
-- Optimised GeoNames location loading by filtering unnecessary data before processing. This has dramatically reduced memory usage and improved performance, especially for large photo and video collections.
-- Significantly improved album naming by changing the GeoNames lookup logic to introduce a clearer prioritisation order. Location searches now use four distance tiers that better reflect how people typically name places - prioritising spot features within 100m, local features within 1km, populated places within 10km, and finally the nearest appropriate location within 100km.
-- Added support for selected hydrographic features such as seas, gulfs and straits as part of the final fallback, ensuring support for photos and videos taken on water.
-- Changed the default precision level to 3 (detailed) to include spot features by default.
-- Added support for processing HEIC, HEIF and AVIF images.
-- Improved album date accuracy by checking additional EXIF and QuickTime metadata fields.
-- Upgraded MetadataExtractor package from 2.8.1 to 2.9.3.
-- Fixed a bug that incorrectly prevented videos from being grouped by location.
-- Fixed a bug that incorrectly quoted command line options in logs.
-- Fixed bug that prevented GeoNames from being used for video content only.
-- Updated `-s` (`--simulate`) to display significantly more useful information in the terminal instead of only writing details to logs.
-- Cleaned up a lot of formatting to the console.
-- Updated `-h` (`--help`) output with more descriptive command information and improved formatting to respect terminal width.
-- Significantly sped up file size scanning by running operations in parallel.
-- Cleaned up code and fixed compiler warnings and recommendations.
-- Updated documentation, especially around the Quick Start section and location naming behaviour.
-
-### 1.4.0 (21 March 2026)
-- Added support for extracting GPS metadata from videos - handles XMP, DMS, decimal and ISO 6709 formats commonly used by both iOS and Android.
-- Improved progress bar accuracy - now calculated using bytes processed rather than files processed.
-- Tidied up formatting of progress bar for better terminal compatibility.
-- Updated default distance to 10km and default precision level to 2 for better album naming.
-- Added checks to ensure invalid GPS data is not considered.
-- Fixed a bug which meant that photos and videos were still scanned even if `-nv` and/or `-np` were used.
-- Updated the publish script to use `--no-self-contained` as identified by dotnet/sdk#51888.
-- Updated documentation and copyright.
-
-### 1.3.0 (08 October 2025)
-- Replaced `-p` (`--precise`) with new `-p` (`--precision`) to support three levels of album naming detail.
-- Added progress bar for long running tasks; displays percentage complete and estimated time left.
-- Updated GPL copyright version in comments to correctly reflect GNU GPL v2 (or later).
-- Updated documentation.
-
-### 1.2.0 (22 September 2025)
-- Improved grouping by filling missing/invalid GPS data (*imputing*) with locations inferred from photos taken close in time.
-- Moved content sorting by date earlier in the process to support imputing and improve debugging with logs.
-- Added automatic detection of a safe number of parallel tasks based on CPU and storage type to prevent `SEHException` crashes on network drives.
-- Added `-mp` (`--max-parallel`) option to allow users to override the default number of parallel copy, move, or link operations.
-- Default hashing switched to CRC64-ECMA-FAST (64 KiB prefix) for much faster performance; accidental collisions remain rare.
-- Added `-ha` (`--hash-algo`) to override the hashing algorithm with MD5 or SHA512 (SHA256 on 32-bit systems).
-- Added file size comparison before hashing to further improve duplicate-checking speed.
-- Fixed a bug where the last processed timestamp would be incorrectly updated to an earlier date.
-- Tidied up logging and removed superfluous entries.
-- Fixed a bug where the version checker formatted version numbers using .NET conventions instead of semantic versioning.
-- Updated publishing powershell script to avoid hanging after first build has been completed. 
-
-### 1.1.0 (12 September 2025)
-
-- Added `-df` (`--date-from`) and `-dt` (`--date-to`) to define the photo date range.
-- Added support for using `last` with both `-df` and `-dt`, allowing resuming of previous runs.
-- Added `-xr` (`--exclude-recent`) to skip photos that would appear in future albums (using `-t` threshold).
-- Added `-p` (`--prepend`) to prefix folder names; supports date formats and folder creation.
-- Added `-nc` (`--no-check`) to disable GitHub version checking.
-- Files with no location data are counted to highlight potential issues.
-- New header displays all key configuration information.
-- Added `-u` (`--unique`) to prevent existing album folders from being re-used when album names clash.
-- Improved logger performance by keeping files open instead of repeatedly opening/closing.
-- Split utility functions into static classes for clearer structure.
-- Resolved all .NET code analysis warnings to standardize style and tidy the codebase.
-- Added documentation on how GroupMachine can be used in an automated workflow.
-
-### 1.0.0 (08 August 2025)
-
-- 🏁 Declared as the first stable release.
-- Enforced use of `-c` (`--copy`), `-m` (`--move`), or `-l` (`--link`) to specify the copy mode.
-- Added `-l` (`--link`) option for hard linking, falling back to soft links on failure.
-- Added `-p` (`--precise`) to enable precise location names (e.g. stations, parks, landmarks, etc.) in album titles.
-- Added `-nr` (`--no-range`) to show only the first date in folder names that span multiple days.
-- Added `-np` (`--no-part`) to suppress part number suffixes.
-- Changed album title logic: dropped popularity sorting; locations now kept in time order with the least-used removed.
-- Updated `-s` (`--simulate`) to show the destination folder structure.
-- Refactored the _"(part x)"_ numbering logic to ignore existing folders on disk, relying on date suffixes for uniqueness.
-- Switched to SHA512 for identical file checks on 64-bit processors, 32-bit processors continue to use SHA256.
-- Removed `-u` (`--unique`) check due to poor performance and limited value.
-- Logger now includes OS details to assist with debugging.
-- Re-ordered command-line arguments and grouped them into logical sections.
-- Cleaned up various pieces of code (analyzer suggestions regarding naming, simplifications, and style)
-
-### 0.9.0 (22 July 2025)
-- Initial release.
+See [CHANGELOG.md](CHANGELOG.md)
